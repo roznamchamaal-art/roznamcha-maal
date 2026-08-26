@@ -403,10 +403,26 @@ body.role-operator .role-banner{display:block;}
     <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••">
     <label for="loginPasswordConfirm" id="loginPasswordConfirmLabel" style="display:none;"><span class="ur-only">پاس ورڈ دوبارہ لکھیں</span><span class="en-only">Confirm Password</span></label>
     <input type="password" id="loginPasswordConfirm" autocomplete="new-password" placeholder="••••••" style="display:none;">
+    <label for="loginSecQuestion" id="loginSecQuestionLabel" style="display:none;"><span class="ur-only">سیکیورٹی سوال (پاس ورڈ ری سیٹ کے لیے)</span><span class="en-only">Security Question (for password reset)</span></label>
+    <select id="loginSecQuestion" style="display:none;" onchange="toggleLoginSecCustomQuestion()">
+      <option value="pet">آپ کے پہلے پالتو جانور کا نام؟ / What was the name of your first pet?</option>
+      <option value="city">آپ کی پیدائش کا شہر؟ / What city were you born in?</option>
+      <option value="school">آپ کے پہلے سکول کا نام؟ / What was the name of your first school?</option>
+      <option value="mother">آپ کی والدہ کا پہلا نام؟ / Your mother's first name?</option>
+      <option value="custom">اپنا سوال لکھیں / Write your own question</option>
+    </select>
+    <input type="text" id="loginSecQuestionCustom" style="display:none;" placeholder="اپنا سوال یہاں لکھیں / Write your own question">
+    <label for="loginSecAnswer" id="loginSecAnswerLabel" style="display:none;"><span class="ur-only">جواب</span><span class="en-only">Answer</span></label>
+    <input type="text" id="loginSecAnswer" autocomplete="off" style="display:none;">
     <div class="lock-error" id="loginErr"></div>
     <button class="btn block" id="loginScreenBtn" onclick="checkLoginCredentials()">
       <span class="ur-only">لاگ ان کریں</span><span class="en-only">Login</span>
     </button>
+    <div id="forgotLoginLink" style="text-align:center; margin-top:12px;">
+      <a href="javascript:void(0)" onclick="openForgotLoginModal()" style="font-size:12.5px; color:var(--gold); text-decoration:underline; font-weight:600;">
+        <span class="ur-only">یوزر نیم / پاس ورڈ بھول گئے؟</span><span class="en-only">Forgot username / password?</span>
+      </a>
+    </div>
   </div>
 </div>
 
@@ -4176,17 +4192,41 @@ function showLoginScreen(){
   }
   if(confirmLabel) confirmLabel.style.display = setupMode ? '' : 'none';
   if(confirmInput) confirmInput.style.display = setupMode ? '' : 'none';
+  const secQLabel = document.getElementById('loginSecQuestionLabel');
+  const secQSelect = document.getElementById('loginSecQuestion');
+  const secQCustom = document.getElementById('loginSecQuestionCustom');
+  const secALabel = document.getElementById('loginSecAnswerLabel');
+  const secAInput = document.getElementById('loginSecAnswer');
+  if(secQLabel) secQLabel.style.display = setupMode ? '' : 'none';
+  if(secQSelect) secQSelect.style.display = setupMode ? '' : 'none';
+  if(secQCustom) secQCustom.style.display = (setupMode && secQSelect && secQSelect.value==='custom') ? '' : 'none';
+  if(secALabel) secALabel.style.display = setupMode ? '' : 'none';
+  if(secAInput) secAInput.style.display = setupMode ? '' : 'none';
+  const forgotLink = document.getElementById('forgotLoginLink');
+  if(forgotLink) forgotLink.style.display = setupMode ? 'none' : '';
   const u = document.getElementById('loginUsername');
   if(u) u.focus();
+}
+function toggleLoginSecCustomQuestion(){
+  const sel = document.getElementById('loginSecQuestion');
+  const custom = document.getElementById('loginSecQuestionCustom');
+  if(sel && custom) custom.style.display = sel.value==='custom' ? '' : 'none';
 }
 async function createFirstLogin(){
   const userEl = document.getElementById('loginUsername');
   const passEl = document.getElementById('loginPassword');
   const confirmEl = document.getElementById('loginPasswordConfirm');
+  const secQSelect = document.getElementById('loginSecQuestion');
+  const secQCustom = document.getElementById('loginSecQuestionCustom');
+  const secAEl = document.getElementById('loginSecAnswer');
   const errEl  = document.getElementById('loginErr');
   const username = (userEl.value||'').trim();
   const password = passEl.value||'';
   const confirmPass = confirmEl.value||'';
+  const secQuestionText = secQSelect && secQSelect.value==='custom'
+    ? (secQCustom.value||'').trim()
+    : (secQSelect ? secQSelect.options[secQSelect.selectedIndex].text : '');
+  const secAnswer = (secAEl && secAEl.value||'').trim();
   if(!username || !password){
     errEl.textContent = t('یوزر نیم اور پاس ورڈ درج کریں','Please enter both username and password');
     return;
@@ -4199,10 +4239,15 @@ async function createFirstLogin(){
     errEl.textContent = t('پاس ورڈ اور تصدیقی پاس ورڈ ایک جیسے نہیں','Password and confirmation do not match');
     return;
   }
+  if(!secQuestionText || !secAnswer){
+    errEl.textContent = t('پاس ورڈ ری سیٹ کے لیے سیکیورٹی سوال اور جواب درج کریں','Please set a security question and answer for password reset');
+    return;
+  }
   const passHash = await sha256Hex(password);
-  localStorage.setItem(LOGIN_CREDS_KEY, JSON.stringify({ username, passHash }));
+  const secAnswerHash = await sha256Hex(secAnswer.toLowerCase());
+  localStorage.setItem(LOGIN_CREDS_KEY, JSON.stringify({ username, passHash, secQuestion:secQuestionText, secAnswerHash }));
   errEl.textContent = '';
-  passEl.value = ''; confirmEl.value = '';
+  passEl.value = ''; confirmEl.value = ''; if(secAEl) secAEl.value = '';
   sessionStorage.setItem(LOGIN_SESSION_KEY,'yes');
   hideLoginScreen();
   startAppAfterLogin();
@@ -4247,6 +4292,100 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(p) p.addEventListener('keydown', onEnter);
   if(c) c.addEventListener('keydown', onEnter);
 });
+
+/* ============ FORGOT USERNAME / PASSWORD (RESET) ============
+   This app is fully offline — there is no server or email to send a
+   reset link to. So the reset is gated by the Security Question that
+   was set up alongside the original username/password. Answering it
+   correctly lets the user set a brand-new username/password; the old
+   ones are simply overwritten. The security question itself stays
+   the same after a reset (so it can be used again later). */
+function openForgotLoginModal(){
+  const creds = getStoredLoginCreds();
+  if(!creds || !creds.secQuestion || !creds.secAnswerHash){
+    showModal(`
+      <h3><span class="ur-only">ری سیٹ دستیاب نہیں</span><span class="en-only">Reset Not Available</span></h3>
+      <div style="font-size:12.5px;color:var(--ink-soft);">
+        <span class="ur-only">اس ڈیوائس پر کوئی سیکیورٹی سوال محفوظ نہیں ہے، اس لیے خودکار ری سیٹ ممکن نہیں۔ جس نے یہ ایپ سیٹ کی تھی اس سے رابطہ کریں۔</span>
+        <span class="en-only">No security question is saved on this device, so an automatic reset isn't possible. Please contact whoever set this app up.</span>
+      </div>
+    `);
+    return;
+  }
+  showModal(`
+    <h3><span class="ur-only">لاگ ان ری سیٹ کریں</span><span class="en-only">Reset Login</span></h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">
+      <span class="ur-only">اپنا نیا یوزر نیم اور پاس ورڈ بنانے کے لیے نیچے دیے گئے سیکیورٹی سوال کا جواب دیں۔</span>
+      <span class="en-only">Answer the security question below to set a new username and password.</span>
+    </div>
+    <label for="resetSecAnswer">${creds.secQuestion}</label>
+    <input type="text" id="resetSecAnswer" autocomplete="off" placeholder="${t('جواب','Answer')}">
+    <label for="resetNewUsername"><span class="ur-only">نیا یوزر نیم</span><span class="en-only">New Username</span></label>
+    <input type="text" id="resetNewUsername" autocomplete="username">
+    <label for="resetNewPassword"><span class="ur-only">نیا پاس ورڈ</span><span class="en-only">New Password</span></label>
+    <input type="password" id="resetNewPassword" autocomplete="new-password" placeholder="••••••">
+    <label for="resetNewPasswordConfirm"><span class="ur-only">نیا پاس ورڈ دوبارہ لکھیں</span><span class="en-only">Confirm New Password</span></label>
+    <input type="password" id="resetNewPasswordConfirm" autocomplete="new-password" placeholder="••••••">
+    <div class="lock-error" id="resetLoginErr"></div>
+    <button class="btn block" onclick="submitLoginReset()">
+      <span class="ur-only">پاس ورڈ ری سیٹ کریں</span><span class="en-only">Reset Password</span>
+    </button>
+    <div style="font-size:11px;color:var(--ink-soft);margin-top:10px;text-align:center;">
+      <span class="ur-only">جواب یاد نہیں؟ جس نے یہ ایپ آپ کے لیے سیٹ کی تھی اس سے رابطہ کریں۔</span>
+      <span class="en-only">Don't remember the answer? Contact whoever set this app up for you.</span>
+    </div>
+  `);
+  const ansEl = document.getElementById('resetSecAnswer');
+  if(ansEl) ansEl.focus();
+}
+async function submitLoginReset(){
+  const ansEl = document.getElementById('resetSecAnswer');
+  const userEl = document.getElementById('resetNewUsername');
+  const passEl = document.getElementById('resetNewPassword');
+  const confirmEl = document.getElementById('resetNewPasswordConfirm');
+  const errEl = document.getElementById('resetLoginErr');
+
+  const answer = (ansEl.value||'').trim();
+  const newUsername = (userEl.value||'').trim();
+  const newPassword = passEl.value||'';
+  const confirmPassword = confirmEl.value||'';
+
+  if(!answer){
+    errEl.textContent = t('جواب درج کریں','Please enter the answer');
+    return;
+  }
+  const creds = getStoredLoginCreds();
+  const enteredHash = await sha256Hex(answer.toLowerCase());
+  if(!creds || enteredHash!==creds.secAnswerHash){
+    errEl.textContent = t('غلط جواب','Incorrect answer');
+    ansEl.value = '';
+    return;
+  }
+  if(!newUsername || !newPassword){
+    errEl.textContent = t('نیا یوزر نیم اور پاس ورڈ درج کریں','Please enter a new username and password');
+    return;
+  }
+  if(newPassword.length<4){
+    errEl.textContent = t('پاس ورڈ کم از کم 4 حروف کا ہونا چاہیے','Password must be at least 4 characters');
+    return;
+  }
+  if(newPassword!==confirmPassword){
+    errEl.textContent = t('پاس ورڈ اور تصدیقی پاس ورڈ ایک جیسے نہیں','Password and confirmation do not match');
+    return;
+  }
+
+  const ok = await changeLoginCredentials(newUsername, newPassword);
+  if(ok){
+    closeModal();
+    const uEl = document.getElementById('loginUsername');
+    const pEl = document.getElementById('loginPassword');
+    if(uEl) uEl.value = newUsername;
+    if(pEl) pEl.value = '';
+    showLoginScreen();
+    const loginErrEl = document.getElementById('loginErr');
+    if(loginErrEl) loginErrEl.textContent = t('لاگ ان ری سیٹ ہو گیا — اب لاگ ان کریں','Login reset — please log in now');
+  }
+}
 // optional helper: call from a settings screen to let the admin change username/password
 async function changeLoginCredentials(newUsername, newPassword){
   if(!newUsername || !newPassword){
@@ -4254,7 +4393,13 @@ async function changeLoginCredentials(newUsername, newPassword){
     return false;
   }
   const passHash = await sha256Hex(newPassword);
-  localStorage.setItem(LOGIN_CREDS_KEY, JSON.stringify({ username:newUsername.trim(), passHash }));
+  const existing = getStoredLoginCreds() || {};
+  localStorage.setItem(LOGIN_CREDS_KEY, JSON.stringify({
+    username:newUsername.trim(),
+    passHash,
+    secQuestion: existing.secQuestion,
+    secAnswerHash: existing.secAnswerHash
+  }));
   return true;
 }
 function proceedToLoginGate(){
