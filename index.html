@@ -949,6 +949,13 @@ function defaultExpenseHeads(){
     ['متفرق','Miscellaneous']
   ].map(([ur,en])=>({id:uid('eh'), ur, en}));
 }
+function defaultIncomeHeads(){
+  return [
+    ['عطیات لوکل','Local Donations'],
+    ['کرایہ','Rent'],
+    ['دیگر آمد','Other Income']
+  ].map(([ur,en])=>({id:uid('ih'), ur, en}));
+}
 function migrateDB(){
   DB.khatas.forEach(k=>{
     if(k.wasiyatNo===undefined) k.wasiyatNo='';
@@ -972,6 +979,8 @@ function migrateDB(){
   if(DB.monthShifts===undefined) DB.monthShifts={};
   if(DB.expenseHeads===undefined) DB.expenseHeads=defaultExpenseHeads();
   if(DB.expenses===undefined) DB.expenses=[];
+  if(DB.incomeHeads===undefined) DB.incomeHeads=defaultIncomeHeads();
+  if(DB.incomeEntries===undefined) DB.incomeEntries=[];
   if(DB.orgName===undefined) DB.orgName='';
   if(DB.cashOpeningBalance===undefined) DB.cashOpeningBalance=0;
   if(DB.security===undefined) DB.security={pinEnabled:false, pinHash:'', editPinEnabled:false, editPinHash:'', biometricEnabled:false, biometricCredId:'', backupEncEnabled:false, backupPassHash:'', dataEncEnabled:false};
@@ -991,6 +1000,10 @@ function migrateDB(){
   DB.expenses.forEach(ex=>{
     if(ex.lateEntry===undefined) ex.lateEntry=false;
     if(ex.originalMonth===undefined) ex.originalMonth=ex.month;
+  });
+  DB.incomeEntries.forEach(inc=>{
+    if(inc.lateEntry===undefined) inc.lateEntry=false;
+    if(inc.originalMonth===undefined) inc.originalMonth=inc.month;
   });
   if(!DB.headsReordered){
     // rename the old combined head (چندہ عام / حصہ آمد) to چندہ عام, keep its old amounts intact
@@ -1893,7 +1906,7 @@ function seedDB(){
   addEntry(khatas[1].id, '2026-06-06', '102', '3', {[hChandaAam.id]:12500, [hJalsa.id]:12500, [hAmanat.id]:12500});
   addEntry(khatas[1].id, '2026-07-05', '119', '3', {[hChandaAam.id]:12500, [hJalsa.id]:12500, [hAmanat.id]:12500});
 
-  return {heads, khatas, entries, customMonths:[], monthShifts:{}, expenseHeads:defaultExpenseHeads(), expenses:[], orgName:'', cashOpeningBalance:0};
+  return {heads, khatas, entries, customMonths:[], monthShifts:{}, expenseHeads:defaultExpenseHeads(), expenses:[], incomeHeads:defaultIncomeHeads(), incomeEntries:[], orgName:'', cashOpeningBalance:0};
 }
 
 /* ============ APP STATE ============ */
@@ -1927,9 +1940,10 @@ const ROZNAMCHA_PAGE_SIZE = 60; // client-side pagination keeps large months fas
 let roznamchaPage = 1;
 let entryDraft = null;
 let khataDraft = null;
-let LOCAL_SUBTAB = 'cashbook';       // cashbook | expenses | expenseheads
+let LOCAL_SUBTAB = 'cashbook';       // cashbook | expenses | expenseheads | income | incomeheads
 let localSelectedMonth = null;
 let expenseDraft = null;
+let incomeDraft = null;
 let summaryView = null;              // null | 'namewise' | 'defaulters' | 'budgetmembers'
 let namewiseHeadId = null;
 let namewiseMonth = ''; // '' = all months
@@ -1988,6 +2002,8 @@ function searchGoHeads(){ clearGlobalSearch(); TAB='heads'; activateTabButtons('
 function searchGoEntry(month){ clearGlobalSearch(); TAB='roznamcha'; selectedMonth=month; activateTabButtons('roznamcha'); render(); }
 function searchGoExpense(month){ clearGlobalSearch(); TAB='local'; LOCAL_SUBTAB='expenses'; localSelectedMonth=month; activateTabButtons('local'); render(); }
 function searchGoExpenseHeads(){ clearGlobalSearch(); TAB='local'; LOCAL_SUBTAB='expenseheads'; activateTabButtons('local'); render(); }
+function searchGoIncome(month){ clearGlobalSearch(); TAB='local'; LOCAL_SUBTAB='income'; localSelectedMonth=month; activateTabButtons('local'); render(); }
+function searchGoIncomeHeads(){ clearGlobalSearch(); TAB='local'; LOCAL_SUBTAB='incomeheads'; activateTabButtons('local'); render(); }
 
 /* ============ UNIVERSAL SEARCH (searches everything, not just heads) ============ */
 function renderGlobalSearchResults(qRaw){
@@ -1999,6 +2015,7 @@ function renderGlobalSearchResults(qRaw){
   );
   const headResults = DB.heads.filter(h=>has(h.ur)||has(h.en));
   const expenseHeadResults = (DB.expenseHeads||[]).filter(h=>has(h.ur)||has(h.en));
+  const incomeHeadResults = (DB.incomeHeads||[]).filter(h=>has(h.ur)||has(h.en));
   const entryResults = DB.entries.filter(e=>{
     const k = e.khataId ? DB.khatas.find(x=>x.id===e.khataId) : null;
     const nm = k ? (LANG==='ur'?k.name_ur:k.name_en) : (e.manualName||'');
@@ -2009,8 +2026,12 @@ function renderGlobalSearchResults(qRaw){
     const h = (DB.expenseHeads||[]).find(x=>x.id===e.headId);
     return has(e.detail)||has(e.billNo)||has(e.date)||(h&&(has(h.ur)||has(h.en)));
   });
+  const incomeResults = (DB.incomeEntries||[]).filter(e=>{
+    const h = (DB.incomeHeads||[]).find(x=>x.id===e.headId);
+    return has(e.detail)||has(e.date)||(h&&(has(h.ur)||has(h.en)));
+  });
 
-  const totalCount = khataResults.length+headResults.length+expenseHeadResults.length+entryResults.length+expenseResults.length;
+  const totalCount = khataResults.length+headResults.length+expenseHeadResults.length+incomeHeadResults.length+entryResults.length+expenseResults.length+incomeResults.length;
 
   const section = (title,count,html)=> count ? `<div class="card"><h2>${title} <span class="badge">${count}</span></h2>${html}</div>` : '';
 
@@ -2033,6 +2054,12 @@ function renderGlobalSearchResults(qRaw){
       <div class="arrow">›</div>
     </div>`).join('');
 
+  const incomeHeadHtml = incomeHeadResults.map(h=>`
+    <div class="khata-item" onclick="searchGoIncomeHeads()">
+      <div class="khata-info"><div class="nm">${LANG==='ur'?h.ur:h.en}</div><div class="rel">${t('مد — آمد','Income Head')}</div></div>
+      <div class="arrow">›</div>
+    </div>`).join('');
+
   const entryHtml = entryResults.slice(0,60).map(e=>{
     const k = e.khataId ? DB.khatas.find(x=>x.id===e.khataId) : null;
     const nm = k ? (LANG==='ur'?k.name_ur:k.name_en) : (e.manualName||t('نامعلوم','Unknown'));
@@ -2051,12 +2078,22 @@ function renderGlobalSearchResults(qRaw){
     </div>`;
   }).join('');
 
+  const incomeHtml = incomeResults.slice(0,60).map(e=>{
+    const h = (DB.incomeHeads||[]).find(x=>x.id===e.headId);
+    return `<div class="khata-item" onclick="searchGoIncome('${e.month}')">
+      <div class="khata-info"><div class="nm">${e.detail || (h?(LANG==='ur'?h.ur:h.en):'-')} — ${fmtNum(e.amount)}</div><div class="rel">${e.date}</div></div>
+      <div class="arrow">›</div>
+    </div>`;
+  }).join('');
+
   const body = [
     section(t('کھاتہ جات','Accounts'), khataResults.length, khataHtml),
     section(t('ہیڈز (چندہ)','Chanda Heads'), headResults.length, headHtml),
     section(t('ہیڈز (اخراجات)','Expense Heads'), expenseHeadResults.length, expenseHeadHtml),
+    section(t('ہیڈز (آمد)','Income Heads'), incomeHeadResults.length, incomeHeadHtml),
     section(t('روزنامچہ اندراجات','Daybook Entries'), entryResults.length, entryHtml),
-    section(t('اخراجات','Expenses'), expenseResults.length, expenseHtml)
+    section(t('اخراجات','Expenses'), expenseResults.length, expenseHtml),
+    section(t('آمد','Income'), incomeResults.length, incomeHtml)
   ].join('');
 
   return `<div class="card"><h2>${t('نتائج تلاش','Search Results')} <span class="badge">${totalCount}</span></h2>
@@ -2126,6 +2163,7 @@ function renderDashboard(){
         <button class="btn outline sm" onclick="openEntryModal()">+ ${t('نئی رسید','New Receipt')}</button>
         <button class="btn outline sm" onclick="printReport('${t('ڈیش بورڈ سمری','Dashboard Summary')}', window.__dashHtml)">⬇ ${t('ایکسپورٹ (PDF/Excel)','Export (PDF/Excel)')}</button>
         <button class="btn outline sm" onclick="openDefaultersModal()">📋 ${t('بقایا داروں کی فہرست','Defaulters List')}</button>
+        <button class="btn outline sm" onclick="openRemittanceSummaryModal()">📊 ${t('ترسیل سمری','Remittance Summary')}</button>
       </div>
       <div class="note">${t('یہ صفحہ ایپ کھلتے ہی سب سے پہلے نظر آتا ہے اور روزانہ کی صورتحال کا فوری جائزہ دیتا ہے۔','This page opens first every time and gives a quick daily overview.')}</div>
     </div>`;
@@ -3092,6 +3130,85 @@ function shareDefaultersList(){
   rows.forEach(r=>{ text += `${r.number}. ${r.name} — ${t('بقایا','Balance')}: ${fmtNum(r.baqaya)}\n`; });
   shareReport(t('فہرست بقایادار','Balance / Defaulters List'), text);
 }
+
+/* ============ REMITTANCE SUMMARY (ترسیل سمری) — month-wise totals of entered receipts, by head ============ */
+function getRemittanceSummaryMonths(){
+  const map = {};
+  DB.entries.forEach(e=>{
+    if(!map[e.month]) map[e.month] = {month:e.month, total:0, byHead:{}};
+    map[e.month].total += e.total;
+    Object.entries(e.amounts||{}).forEach(([hid,amt])=>{
+      map[e.month].byHead[hid] = (map[e.month].byHead[hid]||0) + (amt||0);
+    });
+  });
+  return Object.values(map).sort((a,b)=>a.month.localeCompare(b.month));
+}
+function getRemittanceSummaryHeadIds(rows){
+  const used = new Set();
+  rows.forEach(r=>Object.keys(r.byHead).forEach(hid=>{ if(r.byHead[hid]>0) used.add(hid); }));
+  return DB.heads.filter(h=>used.has(h.id)).sort((a,b)=>{
+    const ai = PRIORITY_HEAD_ORDER.indexOf(a.ur), bi = PRIORITY_HEAD_ORDER.indexOf(b.ur);
+    if(ai===-1 && bi===-1) return 0;
+    if(ai===-1) return 1;
+    if(bi===-1) return -1;
+    return ai-bi;
+  }).map(h=>h.id);
+}
+function buildRemittanceSummaryTableHtml(){
+  const rows = getRemittanceSummaryMonths();
+  const headIds = getRemittanceSummaryHeadIds(rows);
+  if(!rows.length) return `<div class="empty">${t('کوئی ڈیٹا نہیں','No data')}</div>`;
+  const headTh = headIds.map(hid=>`<th>${headLabel(hid)}</th>`).join('');
+  const bodyRows = rows.map(r=>{
+    const headTds = headIds.map(hid=>`<td>${fmtNum(r.byHead[hid]||0)}</td>`).join('');
+    return `<tr><td>${monthLabel(r.month,LANG)}</td>${headTds}<td><b>${fmtNum(r.total)}</b></td></tr>`;
+  }).join('');
+  const headTotals = headIds.map(hid=>`<td>${fmtNum(rows.reduce((a,r)=>a+(r.byHead[hid]||0),0))}</td>`).join('');
+  const grandTotal = fmtNum(rows.reduce((a,r)=>a+r.total,0));
+  const totalRow = `<tr class="total-row"><td>${t('میزان','Total')}</td>${headTotals}<td><b>${grandTotal}</b></td></tr>`;
+  return `<div class="tbl-wrap"><table class="ledger"><thead><tr><th>${t('ماہ','Month')}</th>${headTh}<th>${t('کل میزان','Grand Total')}</th></tr></thead><tbody>${bodyRows}${totalRow}</tbody></table></div>`;
+}
+function remittanceSummaryText(){
+  const rows = getRemittanceSummaryMonths();
+  const headIds = getRemittanceSummaryHeadIds(rows);
+  let text = `${t('ترسیل سمری','Remittance Summary')}\n\n`;
+  if(!rows.length) return text + t('کوئی ڈیٹا نہیں','No data');
+  rows.forEach(r=>{
+    text += `${monthLabel(r.month,LANG)} — ${t('کل میزان','Total')}: ${fmtNum(r.total)}\n`;
+    headIds.forEach(hid=>{ if(r.byHead[hid]>0) text += `   ${headLabel(hid)}: ${fmtNum(r.byHead[hid])}\n`; });
+    text += `\n`;
+  });
+  text += `${t('میزان (سب ماہ)','Total (all months)')}: ${fmtNum(rows.reduce((a,r)=>a+r.total,0))}\n`;
+  return text;
+}
+function openRemittanceSummaryModal(){
+  showModal(`
+    <h3>${t('ترسیل سمری','Remittance Summary')}</h3>
+    <div class="note">${t('ہر ماہ کی اندراج شدہ رسیدوں کا میزان اور مد وار تفصیل — کاپی، شیئر یا پرنٹ کی جا سکتی ہے۔','Month-wise total of entered receipts and head-wise detail — can be copied, shared or printed.')}</div>
+    <div style="margin-top:8px;">${buildRemittanceSummaryTableHtml()}</div>
+    <div class="toolbar" style="margin-top:12px;">
+      <button class="btn outline sm" onclick="copyRemittanceSummary()">📋 ${t('کاپی','Copy')}</button>
+      <button class="btn outline sm" onclick="shareRemittanceSummary()">📤 ${t('شیئر','Share')}</button>
+      <button class="btn outline sm" onclick="printRemittanceSummary()">🖨 ${t('پرنٹ','Print')}</button>
+    </div>
+  `);
+}
+async function copyRemittanceSummary(){
+  const text = remittanceSummaryText();
+  try{
+    await navigator.clipboard.writeText(text);
+    alert(t('ترسیل سمری کلپ بورڈ پر کاپی ہو گئی۔','Remittance summary copied to clipboard.'));
+  }catch(e){
+    shareReport(t('ترسیل سمری','Remittance Summary'), text);
+  }
+}
+function shareRemittanceSummary(){
+  shareReport(t('ترسیل سمری','Remittance Summary'), remittanceSummaryText());
+}
+function printRemittanceSummary(){
+  printReport(t('ترسیل سمری','Remittance Summary'), buildRemittanceSummaryTableHtml());
+}
+
 /* ---- Reminder for one defaulter: opens WhatsApp (if a phone number is on file) or falls back to native share/copy ---- */
 function sendDefaulterReminder(khataId){
   const k = DB.khatas.find(x=>x.id===khataId); if(!k) return;
@@ -3258,6 +3375,7 @@ function shareTanzeemDetail(){
 function localAllMonths(){
   const set = new Set(allMonths());
   DB.expenses.forEach(e=>set.add(e.month));
+  (DB.incomeEntries||[]).forEach(e=>set.add(e.month));
   (DB.customLocalMonths||[]).forEach(m=>set.add(m));
   return Array.from(set).sort();
 }
@@ -3278,12 +3396,15 @@ function addLocalMonth(){
 }
 function deleteLocalMonth(m){
   requireEditPin(()=>{
-    const count = DB.expenses.filter(e=>e.month===m).length;
+    const expCount = DB.expenses.filter(e=>e.month===m).length;
+    const incCount = (DB.incomeEntries||[]).filter(e=>e.month===m).length;
+    const count = expCount + incCount;
     const msg = count>0
-      ? t(`اس ماہ میں ${count} اخراجات موجود ہیں۔ کیا آپ یہ ماہ اور اس کے تمام اخراجات حذف کرنا چاہتے ہیں؟`,`This month has ${count} expense entries. Delete this month and all its expenses?`)
+      ? t(`اس ماہ میں ${expCount} اخراجات اور ${incCount} آمد اندراجات موجود ہیں۔ کیا آپ یہ ماہ اور اس کے تمام اندراجات حذف کرنا چاہتے ہیں؟`,`This month has ${expCount} expense and ${incCount} income entries. Delete this month and all its entries?`)
       : t('کیا آپ یہ ماہ حذف کرنا چاہتے ہیں؟','Delete this month?');
     if(!confirm(msg)) return;
     DB.expenses = DB.expenses.filter(e=>e.month!==m);
+    DB.incomeEntries = (DB.incomeEntries||[]).filter(e=>e.month!==m);
     DB.customLocalMonths = (DB.customLocalMonths||[]).filter(x=>x!==m);
     DB.closedLocalMonths = (DB.closedLocalMonths||[]).filter(x=>x!==m);
     saveDB();
@@ -3334,12 +3455,16 @@ function renderLocalKharch(){
   const subtabs = `
     <div class="pill-row">
       <button class="pill ${LOCAL_SUBTAB==='cashbook'?'active':''}" onclick="switchLocalSubtab('cashbook')">${t('کیش بک','Cash Book')}</button>
+      <button class="pill ${LOCAL_SUBTAB==='income'?'active':''}" onclick="switchLocalSubtab('income')">${t('مدوار آمد','Category-wise Income')}</button>
+      <button class="pill ${LOCAL_SUBTAB==='incomeheads'?'active':''}" onclick="switchLocalSubtab('incomeheads')">${t('ہیڈز (آمد)','Income Heads')}</button>
       <button class="pill ${LOCAL_SUBTAB==='expenses'?'active':''}" onclick="switchLocalSubtab('expenses')">${t('مدوار اخراجات','Category-wise Expenses')}</button>
       <button class="pill ${LOCAL_SUBTAB==='expenseheads'?'active':''}" onclick="switchLocalSubtab('expenseheads')">${t('ہیڈز (اخراجات)','Expense Heads')}</button>
     </div>`;
   let body = '';
   if(LOCAL_SUBTAB==='expenses') body = renderExpenseEntries();
   else if(LOCAL_SUBTAB==='expenseheads') body = renderExpenseHeadsManage();
+  else if(LOCAL_SUBTAB==='income') body = renderIncomeEntries();
+  else if(LOCAL_SUBTAB==='incomeheads') body = renderIncomeHeadsManage();
   else body = renderCashBook();
   return `<div class="card"><h2>${t('لوکل خرچ','Local Kharch')} <span class="badge">${t('کیش بک و اخراجات','Cash Book & Expenses')}</span></h2>${subtabs}</div>${body}`;
 }
@@ -3348,11 +3473,17 @@ function renderLocalKharch(){
 function cashBookIncomeRows(month){
   const shifted = (DB.monthShifts && DB.monthShifts[month]) || [];
   const monthEntries = DB.entries.filter(e=>e.month===month);
-  return shifted.map(hid=>{
+  const shiftedRows = shifted.map(hid=>{
     const h = DB.heads.find(x=>x.id===hid);
     const amount = monthEntries.reduce((a,e)=>a+(e.amounts[hid]||0),0);
-    return {detail: h?(LANG==='ur'?h.ur:h.en):hid, amount};
+    return {detail: h?(LANG==='ur'?h.ur:h.en):hid, amount, source:'shift'};
   }).filter(r=>r.amount>0);
+  const directRows = DB.incomeEntries.filter(e=>e.month===month).map(e=>{
+    const h = DB.incomeHeads.find(x=>x.id===e.headId);
+    const label = h?(LANG==='ur'?h.ur:h.en):'-';
+    return {detail: e.detail ? `${label} — ${e.detail}` : label, amount: e.amount, source:'direct', id:e.id};
+  });
+  return [...shiftedRows, ...directRows];
 }
 function renderCashBook(){
   const months = localAllMonths();
@@ -3372,9 +3503,9 @@ function renderCashBook(){
   const balance = openingForMonth + totalIncome - totalExpense;
 
   const incomeHtml = incomeRows.length ? `<div class="tbl-wrap"><table class="ledger"><thead><tr><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr></thead>
-    <tbody>${incomeRows.map(r=>`<tr><td style="text-align:${LANG==='ur'?'right':'left'}">${r.detail} <span style="font-size:10px;color:var(--ink-soft);">(${t('روزنامچہ سے شفٹ','shifted from Daybook')})</span></td><td>${fmtNum(r.amount)}</td></tr>`).join('')}
+    <tbody>${incomeRows.map(r=>`<tr><td style="text-align:${LANG==='ur'?'right':'left'}">${r.detail} <span style="font-size:10px;color:var(--ink-soft);">(${r.source==='shift'?t('روزنامچہ سے شفٹ','shifted from Daybook'):t('مدوار آمد','category income')})</span></td><td>${fmtNum(r.amount)}</td></tr>`).join('')}
     <tr class="total-row"><td>${t('کل آمد','Total income')}</td><td>${fmtNum(totalIncome)}</td></tr></tbody></table></div>`
-    : `<div class="empty">${t('اس ماہ کوئی آمد شفٹ نہیں ہوئی','No income shifted this month')}</div>`;
+    : `<div class="empty">${t('اس ماہ کوئی آمد درج نہیں','No income recorded this month')}</div>`;
 
   const expensePageInfo = paginateSlice(expenseRows, cashBookExpensePage, LOCAL_LIST_PAGE_SIZE);
   cashBookExpensePage = expensePageInfo.page;
@@ -3391,12 +3522,13 @@ function renderCashBook(){
       <div class="pill-row" style="margin-top:10px;">${pills}<button class="pill" onclick="openAddLocalMonthModal()">+ ${t('ماہ شامل کریں','Add Month')}</button></div>
       ${isLocalMonthClosed(localSelectedMonth) ? `<div class="note" style="background:var(--gold-light);color:var(--cover-green-dark);font-weight:700;">🔒 ${t('یہ ماہ بند ہے — نئے خرچ یا حذف کے لیے پہلے دوبارہ کھولیں۔','This month is closed — reopen it first to add or delete expenses.')}</div>` : ''}
       <div class="toolbar">
+        <button class="btn outline sm" onclick="openIncomeModal()">+ ${t('آمد درج کریں','Add Income')}</button>
         <button class="btn outline sm" onclick="openExpenseModal()">+ ${t('خرچ درج کریں','Add Expense')}</button>
         <button class="btn outline sm" onclick="printCashBook()">🖨 ${t('پرنٹ','Print')}</button>
         <button class="btn outline sm" onclick="shareCashBook()">📤 ${t('شیئر','Share')}</button>
         <button class="btn ${isLocalMonthClosed(localSelectedMonth)?'gold':'outline'} sm admin-only" onclick="toggleLocalMonthClosed('${localSelectedMonth}')">${isLocalMonthClosed(localSelectedMonth) ? '🔓 '+t('ماہ دوبارہ کھولیں','Reopen Month') : '🔒 '+t('ماہ بند کریں','Close Month')}</button>
       </div>
-      <div style="font-weight:700;color:var(--cover-green);margin-bottom:6px;font-size:13.5px;">${t('ماہانہ آمد (شفٹ شدہ)','Monthly income (shifted)')}</div>
+      <div style="font-weight:700;color:var(--cover-green);margin-bottom:6px;font-size:13.5px;">${t('ماہانہ آمد (شفٹ شدہ + مدوار آمد)','Monthly income (shifted + category income)')}</div>
       ${incomeHtml}
       <div style="font-weight:700;color:var(--cover-green);margin:14px 0 6px;font-size:13.5px;">${t('ماہانہ اخراجات','Monthly expenses')}</div>
       ${expenseHtml}
@@ -3411,9 +3543,12 @@ function renderCashBook(){
 const LOCAL_LIST_PAGE_SIZE = 100; // rows per page for cash-book / expense-entries tables
 let cashBookExpensePage = 1;
 let expenseEntriesPage = 1;
-function selectLocalMonth(m){ localSelectedMonth = m; cashBookExpensePage = 1; expenseEntriesPage = 1; render(); }
+let incomeEntriesPage = 1;
+function selectLocalMonth(m){ localSelectedMonth = m; cashBookExpensePage = 1; expenseEntriesPage = 1; incomeEntriesPage = 1; render(); }
 function changeCashBookExpensePage(delta){ cashBookExpensePage += delta; render(); }
 function changeExpenseEntriesPage(delta){ expenseEntriesPage += delta; render(); }
+function changeIncomeEntriesPage(delta){ incomeEntriesPage += delta; render(); }
+function resolveIncomeMonth(dateStr){ return resolveExpenseMonth(dateStr); } // same Local Kharch month/closed-month rules apply to income
 function printCashBook(){
   const incomeRows = cashBookIncomeRows(localSelectedMonth);
   const totalIncome = incomeRows.reduce((a,r)=>a+r.amount,0);
@@ -3446,6 +3581,144 @@ function shareCashBook(){
   expenseRows.forEach((e,i)=>{ const h=DB.expenseHeads.find(x=>x.id===e.headId); text += `${i+1}. ${e.date} — ${h?(LANG==='ur'?h.ur:h.en):''} — ${fmtNum(e.amount)}\n`; });
   text += `${t('کل خرچ','Total expense')}: ${fmtNum(totalExpense)}\n\n${t('اختتامی بیلنس','Closing balance')}: ${fmtNum(openingForMonth+totalIncome-totalExpense)}`;
   shareReport(t('کیش بک','Cash Book')+' — '+monthLabel(localSelectedMonth,LANG), text);
+}
+function openIncomeModal(){
+  incomeDraft = {date:todayStr(), headId: (DB.incomeHeads&&DB.incomeHeads[0])?DB.incomeHeads[0].id:'', detail:'', amount:''};
+  const headOptions = (DB.incomeHeads||[]).map(h=>`<option value="${h.id}">${LANG==='ur'?h.ur:h.en}</option>`).join('');
+  showModal(`
+    <h3>${t('نئی آمد درج کریں','New Income Entry')}</h3>
+    <label>${t('تاریخ','Date')}</label>
+    <input type="date" id="incDate" value="${incomeDraft.date}" onchange="incomeDraft.date=this.value">
+    <label>${t('مدوار آمد (کیٹیگری)','Income Category')}</label>
+    <select id="incHead" onchange="incomeDraft.headId=this.value">${headOptions}</select>
+    <label>${t('تفصیل','Detail')}</label>
+    <input type="text" id="incDetail" onchange="incomeDraft.detail=this.value">
+    <label>${t('رقم','Amount')}</label>
+    <input type="number" min="0" id="incAmount" onchange="incomeDraft.amount=this.value">
+    <button class="btn block" onclick="saveIncome()">${t('محفوظ کریں','Save')}</button>
+  `);
+}
+function saveIncome(){
+  const amount = parseFloat(incomeDraft.amount);
+  if(!incomeDraft.headId){ alert(t('براہ کرم مدوار آمد منتخب کریں','Please select an income category')); return; }
+  if(!amount || amount<=0){ alert(t('براہ کرم رقم درج کریں','Please enter the amount')); return; }
+  const monthRes = resolveIncomeMonth(incomeDraft.date);
+  if(!monthRes){ alert(t('لوکل خرچ کے تمام ماہ بند ہیں — پہلے کسی ماہ کو دوبارہ کھولیں۔','All Local Kharch months are closed — please reopen a month first.')); return; }
+  if(monthRes.lateEntry){
+    const ok = confirm(t(
+      `تاریخ ${incomeDraft.date} کا ماہ بند ہے۔ یہ آمد بطور "لیٹ اندراج" ${monthLabel(monthRes.month,LANG)} کی کیش بک میں محفوظ کی جائے گی، تاریخ وہی رہے گی۔ جاری رکھیں؟`,
+      `The month for ${incomeDraft.date} is closed. This income will be saved as a "Late Entry" in ${monthLabel(monthRes.month,LANG)}'s cash book, keeping its original date. Continue?`
+    ));
+    if(!ok) return;
+  }
+  DB.incomeEntries.push({id:uid('inc'), date:incomeDraft.date, month:monthRes.month, originalMonth:toMonth(incomeDraft.date), lateEntry:monthRes.lateEntry, headId:incomeDraft.headId, detail:incomeDraft.detail, amount});
+  saveDB(); localSelectedMonth = monthRes.month; closeModal(); render();
+}
+function deleteIncome(id){
+  const inc0 = DB.incomeEntries.find(x=>x.id===id);
+  if(inc0 && isLocalMonthClosed(inc0.month)){ alert(t('یہ ماہ بند ہے — پہلے ماہ دوبارہ کھولیں۔','This month is closed — reopen it first.')); return; }
+  requireEditPin(()=>{
+    if(!confirm(t('کیا آپ واقعی یہ آمد حذف کرنا چاہتے ہیں؟','Delete this income entry?'))) return;
+    DB.incomeEntries = DB.incomeEntries.filter(e=>e.id!==id);
+    saveDB(); render();
+  });
+}
+
+/* ---- Category-wise Income Entries (list/management view — mirrors Category-wise Expenses) ---- */
+function renderIncomeEntries(){
+  const months = localAllMonths();
+  if(!localSelectedMonth || !months.includes(localSelectedMonth)) localSelectedMonth = months[months.length-1];
+  const pills = months.map(m=>`
+    <span class="pill ${m===localSelectedMonth?'active':''}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;" onclick="selectLocalMonth('${m}')">
+      ${monthLabel(m,LANG)}${isLocalMonthClosed(m)?' 🔒':''}
+      <button onclick="event.stopPropagation(); deleteLocalMonth('${m}')" style="border:none;background:none;color:inherit;opacity:.65;cursor:pointer;font-size:13px;line-height:1;">×</button>
+    </span>`).join('');
+  const monthIncome = DB.incomeEntries.filter(e=>e.month===localSelectedMonth).sort((a,b)=>a.date.localeCompare(b.date));
+
+  const incEntriesPageInfo = paginateSlice(monthIncome, incomeEntriesPage, LOCAL_LIST_PAGE_SIZE);
+  incomeEntriesPage = incEntriesPageInfo.page;
+  const incEntriesPagerHtml = paginationBarHtml(incEntriesPageInfo.page, incEntriesPageInfo.totalPages, monthIncome.length, t('اندراجات','entries'), 'changeIncomeEntriesPage(-1)', 'changeIncomeEntriesPage(1)');
+  const rows = incEntriesPageInfo.items.map((e,i)=>{
+    const h = DB.incomeHeads.find(x=>x.id===e.headId);
+    const lateBadge = e.lateEntry ? ` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>` : '';
+    return `<tr><td>${(incEntriesPageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${lateBadge}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td><b>${fmtNum(e.amount)}</b></td><td><button class="row-del" title="${t('حذف کریں','Delete')}" onclick="deleteIncome('${e.id}')">🗑</button></td></tr>`;
+  }).join('');
+  const total = monthIncome.reduce((a,e)=>a+e.amount,0);
+
+  const catTotals = {};
+  monthIncome.forEach(e=>{ catTotals[e.headId] = (catTotals[e.headId]||0)+e.amount; });
+  const catSummary = Object.entries(catTotals).map(([hid,sum])=>{
+    const h = DB.incomeHeads.find(x=>x.id===hid);
+    return `<div style="display:flex;justify-content:space-between;padding:5px 2px;border-bottom:1px dashed var(--rule);font-size:12.5px;"><span>${h?(LANG==='ur'?h.ur:h.en):'-'}</span><b>${fmtNum(sum)}</b></div>`;
+  }).join('');
+
+  const table = monthIncome.length ? `${incEntriesPagerHtml}<div class="tbl-wrap"><table class="ledger">
+    <thead><tr><th>#</th><th>${t('تاریخ','Date')}</th><th>${t('مدوار آمد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th><th></th></tr></thead>
+    <tbody>${rows}<tr class="total-row"><td colspan="4">${t('کل میزان (تمام صفحات)','Grand total (all pages)')}</td><td>${fmtNum(total)}</td><td></td></tr></tbody>
+    </table></div>${incEntriesPagerHtml}` : `<div class="empty"><span class="big">💰</span>${t('اس ماہ کوئی آمد درج نہیں','No income recorded this month')}</div>`;
+
+  return `
+    <div class="card">
+      <div class="pill-row">${pills}<button class="pill" onclick="openAddLocalMonthModal()">+ ${t('ماہ شامل کریں','Add Month')}</button></div>
+      ${isLocalMonthClosed(localSelectedMonth) ? `<div class="note" style="background:var(--gold-light);color:var(--cover-green-dark);font-weight:700;">🔒 ${t('یہ ماہ بند ہے — نئی آمد یا حذف کے لیے پہلے دوبارہ کھولیں۔','This month is closed — reopen it first to add or delete income.')}</div>` : ''}
+      <div class="toolbar">
+        <button class="btn outline sm" onclick="openIncomeModal()">+ ${t('نئی آمد','New Income')}</button>
+        <button class="btn outline sm" onclick="printIncomeEntries()">🖨 ${t('پرنٹ','Print')}</button>
+        <button class="btn outline sm" onclick="shareIncomeEntries()">📤 ${t('شیئر','Share')}</button>
+        <button class="btn ${isLocalMonthClosed(localSelectedMonth)?'gold':'outline'} sm admin-only" onclick="toggleLocalMonthClosed('${localSelectedMonth}')">${isLocalMonthClosed(localSelectedMonth) ? '🔓 '+t('ماہ دوبارہ کھولیں','Reopen Month') : '🔒 '+t('ماہ بند کریں','Close Month')}</button>
+      </div>
+      ${table}
+      ${catSummary ? `<div style="margin-top:12px;"><div style="font-weight:700;color:var(--cover-green);margin-bottom:6px;font-size:13.5px;">${t('مد وار آمد (اس ماہ)','By-category income (this month)')}</div>${catSummary}</div>` : ''}
+    </div>`;
+}
+function printIncomeEntries(){
+  const monthIncome = DB.incomeEntries.filter(e=>e.month===localSelectedMonth).sort((a,b)=>a.date.localeCompare(b.date));
+  const rows = monthIncome.map((e,i)=>{ const h=DB.incomeHeads.find(x=>x.id===e.headId); return `<tr><td>${i+1}</td><td>${e.date}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td>${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td></tr>`; }).join('');
+  const total = monthIncome.reduce((a,e)=>a+e.amount,0);
+  const html = `<table><thead><tr><th>#</th><th>${t('تاریخ','Date')}</th><th>${t('مدوار آمد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr></thead>
+    <tbody>${rows}<tr class="total-row"><td colspan="4">${t('کل میزان','Grand total')}</td><td>${fmtNum(total)}</td></tr></tbody></table>`;
+  printReport(t('مدوار آمد','Category-wise Income')+' — '+monthLabel(localSelectedMonth,LANG), html);
+}
+function shareIncomeEntries(){
+  const monthIncome = DB.incomeEntries.filter(e=>e.month===localSelectedMonth).sort((a,b)=>a.date.localeCompare(b.date));
+  let text = `${t('مدوار آمد','Category-wise Income')} — ${monthLabel(localSelectedMonth,LANG)}\n\n`;
+  monthIncome.forEach((e,i)=>{ const h=DB.incomeHeads.find(x=>x.id===e.headId); text += `${i+1}. ${e.date} — ${h?(LANG==='ur'?h.ur:h.en):''} — ${fmtNum(e.amount)}\n`; });
+  const total = monthIncome.reduce((a,e)=>a+e.amount,0);
+  text += `\n${t('کل میزان','Grand total')}: ${fmtNum(total)}`;
+  shareReport(t('مدوار آمد','Category-wise Income')+' — '+monthLabel(localSelectedMonth,LANG), text);
+}
+
+/* ---- Income Heads (categories) management ---- */
+function renderIncomeHeadsManage(){
+  const chips = (DB.incomeHeads||[]).map(h=>`<div class="head-chip">${LANG==='ur'?h.ur:h.en}<button onclick="deleteIncomeHead('${h.id}')">×</button></div>`).join('');
+  return `
+    <div class="card">
+      <h2>${t('ہیڈز (آمد)','Income Heads')} <span class="badge">${(DB.incomeHeads||[]).length}</span></h2>
+      <div class="head-toggle-list">${chips}</div>
+      <label style="margin-top:14px;">${t('نیا ہیڈ شامل کریں (اردو)','Add new head (Urdu)')}</label>
+      <input id="newIncHeadUr" type="text" placeholder="مثلاً: کرایہ">
+      <label>${t('New head name (English)','New head name (English)')}</label>
+      <input id="newIncHeadEn" type="text" placeholder="e.g. Rent">
+      <button class="btn block" onclick="addIncomeHead()">+ ${t('ہیڈ شامل کریں','Add Head')}</button>
+      <div class="note">${t('جتنی چاہیں مدات (ہیڈز) شامل کر سکتے ہیں — کرایہ، عطیات، فروخت اشیاء، متفرق آمد وغیرہ۔','Add as many income categories as you need — rent, donations, sale of goods, misc income, etc.')}</div>
+      <button class="btn outline block" onclick="openIncomeModal()">+ ${t('نئی آمد درج کریں','New Income Entry')}</button>
+    </div>`;
+}
+function addIncomeHead(){
+  const ur = document.getElementById('newIncHeadUr').value.trim();
+  const en = document.getElementById('newIncHeadEn').value.trim();
+  if(!ur && !en){ alert(t('ہیڈ کا نام درج کریں','Please enter a head name')); return; }
+  if(!DB.incomeHeads) DB.incomeHeads=[];
+  DB.incomeHeads.push({id:uid('ih'), ur: ur||en, en: en||ur});
+  saveDB(); render();
+}
+function deleteIncomeHead(id){
+  requireEditPin(()=>{
+    const used = DB.incomeEntries.some(e=>e.headId===id);
+    if(used && !confirm(t('یہ ہیڈ پہلے سے آمد میں استعمال ہو چکا ہے۔ پھر بھی حذف کریں؟','This head is already used in existing income entries. Delete anyway?'))) return;
+    DB.incomeHeads = (DB.incomeHeads||[]).filter(h=>h.id!==id);
+    saveDB(); render();
+  });
 }
 
 /* ---- Category-wise Expense Entries ---- */
