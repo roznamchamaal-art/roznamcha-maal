@@ -3055,30 +3055,63 @@ function deleteKhata(id){ if(!requireAdminRole()) return;
   });
 }
 
+/* ============ SUMMARY PRINT — a fixed set of heads only (چندہ عام، حصہ آمد، جلسہ سالانہ، امانت تربیت) ============
+   The account's print button no longer prints every head or a receipt-by-receipt list — only a small
+   matrix (previous balance / budget / grand total, then collected / balance due) for these named heads.
+   Matched by their Urdu name; a head missing from DB.heads (renamed or deleted) is simply left out of the
+   table, and a note says so, rather than failing the print. */
+const PRINT_SUMMARY_HEAD_NAMES = ['چندہ عام','حصہ آمد','حصہ آمد بشرح عام','جلسہ سالانہ','امانت تربیت'];
+function printSummaryHeads(){ return PRINT_SUMMARY_HEAD_NAMES.map(nm=>DB.heads.find(h=>h.ur===nm)).filter(Boolean); }
+function khataPrintSummaryTableHtml(k, entries){
+  const heads = printSummaryHeads();
+  const missing = PRINT_SUMMARY_HEAD_NAMES.filter(nm=>!DB.heads.some(h=>h.ur===nm));
+  if(!heads.length) return `<div class="note">${t('مطلوبہ مدات (چندہ عام، حصہ آمد، جلسہ سالانہ، امانت تربیت) نہیں ملیں۔','The required heads (Chanda Aam, Hissa Aamad, Jalsa Salana, Amanat Tarbiyyat) were not found.')}</div>`;
+  const val = (map,hid)=>((map||{})[hid])||0;
+  const collected = (hid)=>entries.reduce((a,e)=>a+(e.amounts[hid]||0),0);
+  const prevRow = heads.map(h=>val(k.prevBalanceByHead,h.id));
+  const budgetRow = heads.map(h=>val(k.budgetByHead,h.id));
+  const grandRow = heads.map((h,i)=>prevRow[i]+budgetRow[i]);
+  const collRow = heads.map(h=>collected(h.id));
+  const dueRow = heads.map((h,i)=>grandRow[i]-collRow[i]);
+  const sum = (arr)=>arr.reduce((a,b)=>a+b,0);
+  const headTh = heads.map(h=>`<th>${LANG==='ur'?h.ur:h.en}</th>`).join('') + `<th>${t('میزان','Total')}</th>`;
+  const row = (label, arr)=>`<tr><td>${label}</td>${arr.map(v=>`<td>${fmtNum(v)}</td>`).join('')}<td><b>${fmtNum(sum(arr))}</b></td></tr>`;
+  // تفصیل (Detail): a receipt-wise breakdown — every entry that carries an amount in one of these heads,
+  // one row per receipt, with month / date / receipt no. (کتاب/رسید), so it can be traced back to the daybook.
+  const detailEntries = entries.filter(e=>heads.some(h=>(e.amounts[h.id]||0)>0)).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const detailRows = detailEntries.map(e=>{
+    const vals = heads.map(h=>e.amounts[h.id]||0);
+    return `<tr><td>${monthLabel(e.month,LANG)}</td><td dir="ltr">${e.date}</td><td dir="ltr">${kEsc(e.bookNo||'-')}/${kEsc(e.receiptNo||'-')}</td>${vals.map(v=>`<td>${v?fmtNum(v):'-'}</td>`).join('')}<td><b>${fmtNum(sum(vals))}</b></td></tr>`;
+  }).join('');
+  const detailHeadTh = `<th>${t('ماہ','Month')}</th><th>${t('تاریخ','Date')}</th><th>${t('رسید نمبر','Receipt No.')}<div style="font-weight:400;font-size:10px;">(${t('کتاب/رسید','Book/Receipt')})</div></th>` + headTh;
+  return `
+    <table><thead><tr><th>${t('مد','Head')}</th>${headTh}</tr></thead>
+      <tbody>
+        ${row(t('سابقہ بقایا','Previous balance'), prevRow)}
+        ${row(t('بجٹ سال رواں','Current year budget'), budgetRow)}
+        ${row(t('کل میزان','Grand total'), grandRow)}
+      </tbody></table>
+    <h3 style="font-size:14px;margin-top:10px;">${t('تفصیل','Detail')}</h3>
+    <table><thead><tr>${detailHeadTh}</tr></thead>
+      <tbody>
+        ${detailRows || `<tr><td colspan="${3+heads.length+1}">${t('کوئی رسید نہیں','No receipts')}</td></tr>`}
+        <tr class="total-row"><td colspan="3">${t('کل وصولی','Total collected')}</td>${collRow.map(v=>`<td><b>${fmtNum(v)}</b></td>`).join('')}<td><b>${fmtNum(sum(collRow))}</b></td></tr>
+        <tr class="total-row"><td colspan="3">${t('بقایا','Balance due')}</td>${dueRow.map(v=>`<td><b>${fmtNum(v)}</b></td>`).join('')}<td><b>${fmtNum(sum(dueRow))}</b></td></tr>
+      </tbody></table>
+    ${missing.length?`<div class="note">${t('یہ مدات نہیں ملیں: ','These heads were not found: ')}${missing.join('، ')}</div>`:''}`;
+}
 function printKhata(id){
   const k = DB.khatas.find(x=>x.id===id); if(!k) return;
   const entries = DB.entries.filter(e=>e.khataId===id).sort((a,b)=>a.date.localeCompare(b.date));
-  const detailTotal = entries.reduce((a,e)=>a+e.total,0);
-  const grandTotal = (k.prevBalance||0)+(k.budgetYear||0);
-  const baqaya = grandTotal - detailTotal;
-  const rows = entries.map((e,i)=>`<tr><td>${i+1}</td><td>${e.date}</td><td>${e.receiptNo||'-'}/${e.bookNo||'-'}</td><td>${e.cancelled?t('کینسل شدہ رسید','Cancelled Receipt'):Object.entries(e.amounts).filter(([,v])=>v>0).map(([hid,v])=>{const h=DB.heads.find(x=>x.id===hid);return (h?(LANG==='ur'?h.ur:h.en):'')+': '+fmtNum(v);}).join('، ')}</td><td>${entryTotalStr(e)}</td></tr>`).join('');
-  const prevRows = Object.entries(k.prevBalanceByHead||{}).filter(([,v])=>v>0).map(([hid,v])=>`<tr><td>${headLabel(hid)}</td><td>${fmtNum(v)}</td></tr>`).join('');
-  const budgetRows = Object.entries(k.budgetByHead||{}).filter(([,v])=>v>0).map(([hid,v])=>`<tr><td>${headLabel(hid)}</td><td>${fmtNum(v)}</td></tr>`).join('');
+  const name = LANG==='ur'?k.name_ur:k.name_en;
+  const rel = LANG==='ur'?(k.rel_ur||''):(k.rel_en||'');
   const html = `
-    <div class="fin"><div>${t('وصیت نمبر','Wasiyat No.')}<b>${k.wasiyatNo||'-'}</b></div>
-      <div>${t('سابقہ بقایا','Previous balance')}<b>${fmtNum(k.prevBalance||0)}</b></div>
-      <div>${t('بجٹ سال رواں','Current year budget')}<b>${fmtNum(k.budgetYear||0)}</b></div>
-      <div>${t('کل میزان','Grand total')}<b>${fmtNum(grandTotal)}</b></div>
-      <div>${t('بقایا','Balance due')}<b>${fmtNum(baqaya)}</b></div>
-      ${k.incomeSource?`<div>${t('ذریعہ آمد','Income Source')}<b>${k.incomeSource}</b></div>`:''}
-    </div>
-    ${prevRows?`<h3 style="font-size:14px;">${t('سابقہ بقایا — مد وار','Previous balance — by head')}</h3><table><thead><tr><th>${t('مد','Head')}</th><th>${t('رقم','Amount')}</th></tr></thead><tbody>${prevRows}</tbody></table>`:''}
-    ${budgetRows?`<h3 style="font-size:14px;">${t('بجٹ سال رواں — مد وار','Budget — by head')}</h3><table><thead><tr><th>${t('مد','Head')}</th><th>${t('رقم','Amount')}</th></tr></thead><tbody>${budgetRows}</tbody></table>`:''}
-    <table><thead><tr><th>#</th><th>${t('تاریخ','Date')}</th><th>${t('رسید/کتاب','Rcpt/Bk')}</th><th>${t('تفصیل','Detail')}</th><th>${t('کل','Total')}</th></tr></thead>
-    <tbody>${rows}<tr class="total-row"><td colspan="4">${t('میزان','Total')}</td><td>${fmtNum(detailTotal)}</td></tr></tbody></table>
-    ${byHeadDueRowsForPrint(k, entries)}`;
-  printReport(`${t('کھاتہ','Account')} ${k.number} — ${LANG==='ur'?k.name_ur:k.name_en}`, html);
+    <div class="org-name">${t('کھاتہ','Account')} ${k.number} — ${kEsc(name)}${rel?` <span style="font-weight:400;">(${kEsc(rel)})</span>`:''}</div>
+    <div class="fin"><div>${t('وصیت نمبر','Wasiyat No.')}<b>${k.wasiyatNo||'-'}</b></div></div>
+    ${khataPrintSummaryTableHtml(k, entries)}`;
+  printReport(`${t('کھاتہ','Account')} ${k.number} — ${name}`, html);
 }
+
 function byHeadDueRowsForPrint(k, entries){
   const rows = khataByHeadDueRows(k, entries);
   if(rows.length===0) return '';
@@ -4355,21 +4388,79 @@ function renderDefaultersModal(){
     </div>
   `);
 }
+/* ============ DEFAULTERS LIST — detailed print/share (پنسل نوٹ کا فارمیٹ) ============
+   The on-screen list above stays a compact table so many accounts can be scanned at a glance; PRINT
+   and SHARE instead give each account its own block — name + ولدیت/زوجیت, then a 5-row matrix (سابقہ،
+   بجٹ سال رواں، میزان، وصولی، بقایا) with one column per head. The heads are whichever the person has
+   pinned with the head pills above the list: up to four specific heads print as exactly those columns;
+   "all heads" prints every head that actually has a nonzero previous balance, budget or receipt among
+   the accounts being printed (so the table doesn't grow one column per unused head in the register).
+   Only the account and date-range filters narrow which accounts/entries are included. */
+function defaultersSelectedHeads(khatas){
+  if(!defaultersHeadIds.includes('all')) return defaultersHeadIds.map(hid=>DB.heads.find(h=>h.id===hid)).filter(Boolean);
+  const used = new Set();
+  khatas.forEach(k=>{
+    Object.entries(k.prevBalanceByHead||{}).forEach(([hid,v])=>{ if(v) used.add(hid); });
+    Object.entries(k.budgetByHead||{}).forEach(([hid,v])=>{ if(v) used.add(hid); });
+  });
+  const khataIds = new Set(khatas.map(k=>k.id));
+  DB.entries.forEach(e=>{ if(khataIds.has(e.khataId)) Object.entries(e.amounts||{}).forEach(([hid,v])=>{ if(v) used.add(hid); }); });
+  return DB.heads.filter(h=>used.has(h.id));
+}
+function defaultersDetailedRows(khatas, heads){
+  const rg = defaultersRange();
+  const inRange = e => (!rg.from || e.date>=rg.from) && (!rg.to || e.date<=rg.to);
+  const val = (map,hid)=>((map||{})[hid])||0;
+  return khatas.map(k=>{
+    const entries = DB.entries.filter(e=>e.khataId===k.id && inRange(e));
+    const prevRow = heads.map(h=>val(k.prevBalanceByHead,h.id));
+    const budgetRow = heads.map(h=>val(k.budgetByHead,h.id));
+    const grandRow = heads.map((h,i)=>prevRow[i]+budgetRow[i]);
+    const collRow = heads.map(h=>entries.reduce((a,e)=>a+(e.amounts[h.id]||0),0));
+    const dueRow = heads.map((h,i)=>grandRow[i]-collRow[i]);
+    return {k, name: LANG==='ur'?k.name_ur:k.name_en, rel: LANG==='ur'?(k.rel_ur||''):(k.rel_en||''), prevRow, budgetRow, grandRow, collRow, dueRow};
+  });
+}
+function defaultersDetailedBlockHtml(r, heads){
+  const sum = (arr)=>arr.reduce((a,b)=>a+b,0);
+  const headTh = heads.map(h=>`<th>${LANG==='ur'?h.ur:h.en}</th>`).join('') + `<th>${t('میزان','Total')}</th>`;
+  const row = (label, arr)=>`<tr><td>${label}</td>${arr.map(v=>`<td>${fmtNum(v)}</td>`).join('')}<td><b>${fmtNum(sum(arr))}</b></td></tr>`;
+  return `
+    <div class="block-label">${r.k.number}. ${kEsc(r.name)}${r.rel?` (${kEsc(r.rel)})`:''}</div>
+    <table><thead><tr><th>${t('مد','Head')}</th>${headTh}</tr></thead>
+      <tbody>
+        ${row(t('سابقہ','Previous'), r.prevRow)}
+        ${row(t('بجٹ سال رواں','Current year budget'), r.budgetRow)}
+        ${row(t('میزان','Grand total'), r.grandRow)}
+        ${row(t('وصولی','Collected'), r.collRow)}
+        ${row(t('بقایا','Balance due'), r.dueRow)}
+      </tbody></table>`;
+}
+function defaultersFilteredKhatas(){
+  let khatas = DB.khatas.slice().sort((a,b)=>a.number-b.number);
+  if(defaultersKhataId!=='all') khatas = khatas.filter(k=>k.id===defaultersKhataId);
+  return khatas;
+}
 function printDefaultersList(){
-  const rows = getDefaultersRows();
-  const rangeOn = defaultersRangeActive();
-  const paidLbl = rangeOn ? t('ادائیگی (مدت)','Paid (period)') : t('کل ادائیگی','Total paid');
-  const hasByHead = rows.length && rows[0].byHead.length>1;
-  const byHeadHead = hasByHead ? rows[0].byHead.map(bh=>`<th>${bh.label}</th>`).join('') : '';
-  const rowsHtml = rows.map(r=>`<tr><td>${r.number}</td><td>${r.name}</td><td>${fmtNum(r.prev)}</td><td>${fmtNum(r.budget)}</td><td>${fmtNum(r.grand)}</td><td>${fmtNum(r.paid)}</td><td>${fmtNum(r.baqaya)}</td>${hasByHead?r.byHead.map(bh=>`<td>${fmtNum(bh.due)}</td>`).join(''):''}</tr>`).join('');
-  const html = `<table><thead><tr><th>${t('نمبر','#')}</th><th>${t('نام','Name')}</th><th>${t('سابقہ بقایا','Prev. bal.')}</th><th>${t('بجٹ','Budget')}</th><th>${t('کل میزان','Grand total')}</th><th>${paidLbl}</th><th>${t('بقایا','Balance')}</th>${byHeadHead}</tr></thead>
-    <tbody>${rowsHtml}<tr class="total-row"><td colspan="2">${t('میزان','Total')}</td><td>${fmtNum(rows.reduce((a,r)=>a+r.prev,0))}</td><td>${fmtNum(rows.reduce((a,r)=>a+r.budget,0))}</td><td>${fmtNum(rows.reduce((a,r)=>a+r.grand,0))}</td><td>${fmtNum(rows.reduce((a,r)=>a+r.paid,0))}</td><td>${fmtNum(rows.reduce((a,r)=>a+r.baqaya,0))}</td>${hasByHead?rows[0].byHead.map((_,i)=>`<td>${fmtNum(rows.reduce((a,r)=>a+r.byHead[i].due,0))}</td>`).join(''):''}</tr></tbody></table>`;
+  const khatas = defaultersFilteredKhatas();
+  const heads = defaultersSelectedHeads(khatas);
+  const rows = defaultersDetailedRows(khatas, heads);
+  const noHeadMsg = t('کوئی مد منتخب نہیں یا زیرِ استعمال نہیں','No head selected, or none is in use');
+  const noDataMsg = t('کوئی ڈیٹا نہیں','No data');
+  const html = (rows.length && heads.length) ? rows.map(r=>defaultersDetailedBlockHtml(r, heads)).join('')
+    : `<div class="note">${heads.length ? noDataMsg : noHeadMsg}</div>`;
   printReport(t('فہرست بقایادار','Balance / Defaulters List')+' — '+DB.fiscalYear+defaultersRangeLabel(), html);
 }
 function shareDefaultersList(){
-  const rows = getDefaultersRows();
+  const khatas = defaultersFilteredKhatas();
+  const heads = defaultersSelectedHeads(khatas);
+  const rows = defaultersDetailedRows(khatas, heads);
   let text = `${t('فہرست بقایادار','Balance / Defaulters List')} — ${DB.fiscalYear}${defaultersRangeLabel()}\n\n`;
-  rows.forEach(r=>{ text += `${r.number}. ${r.name} — ${t('بقایا','Balance')}: ${fmtNum(r.baqaya)}\n`; });
+  rows.forEach(r=>{
+    text += `${r.k.number}. ${r.name}${r.rel?(' ('+r.rel+')'):''}\n`;
+    heads.forEach((h,i)=>{ text += `  ${LANG==='ur'?h.ur:h.en} — ${t('میزان','Total')}: ${fmtNum(r.grandRow[i])} | ${t('وصولی','Collected')}: ${fmtNum(r.collRow[i])} | ${t('بقایا','Balance')}: ${fmtNum(r.dueRow[i])}\n`; });
+    text += `  ${t('میزان','Total')} — ${t('بقایا','Balance')}: ${fmtNum(r.dueRow.reduce((a,b)=>a+b,0))}\n\n`;
+  });
   shareReport(t('فہرست بقایادار','Balance / Defaulters List'), text);
 }
 
