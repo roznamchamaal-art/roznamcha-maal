@@ -439,7 +439,7 @@ body.role-operator .role-banner{display:block;}
       <h1><span class="stamp">ر</span><span class="ur-only">روزنامچہ مال</span><span class="en-only">Roznamcha Maal</span></h1>
       <div style="display:flex; align-items:center; gap:6px;">
         <button class="icon-btn" onclick="openQuickActions()" title="${LANG==='ur'?'کوئیک ایکسز':'Quick Access'}">⚡</button>
-        <button class="icon-btn" id="pwaInstallBtn" onclick="triggerPwaInstall()" title="${LANG==='ur'?'ایپ انسٹال کریں':'Install App'}" style="display:none;">📲</button>
+        <button class="icon-btn" id="pwaInstallBtn" onclick="requireBackupThenInstall()" title="${LANG==='ur'?'ایپ انسٹال کریں':'Install App'}" style="display:none;">📲</button>
         <button class="settings-gear admin-only" onclick="openSettingsModal()" title="${LANG==='ur'?'سیٹنگز':'Settings'}">⚙️</button>
         <div class="lang-toggle">
           <button id="btnUr" class="active" onclick="setLang('ur')">اردو</button>
@@ -540,6 +540,14 @@ function monthLabel(ym, lang){
   return (lang==='ur' ? URDU_MONTHS[idx] : EN_MONTHS[idx]) + ' ' + y;
 }
 function fmtNum(n){ n = Math.round((n||0)*100)/100; return n.toLocaleString('en-US'); }
+/* For print/report tables: a negative amount must stay unmistakably negative even inside RTL Urdu text,
+   where a plain trailing "-" can visually read as something else. Forces LTR direction on the minus sign
+   and colors it red/bold so a deficit can never be misread as a normal positive figure. */
+function fmtNumSigned(n){
+  n = Math.round((n||0)*100)/100;
+  if(n>=0) return fmtNum(n);
+  return `<span style="color:#a33636;font-weight:700;direction:ltr;unicode-bidi:embed;">−${fmtNum(Math.abs(n))}</span>`;
+}
 function entryTotalStr(e){ return e && e.cancelled ? '-' : fmtNum(e ? e.total : 0); }
 /* how many receipt rows fit on one printed A4 page of the roznamcha table */
 const PRINT_ROWS_PER_PAGE = 28;
@@ -1002,6 +1010,7 @@ function migrateDB(){
   if(DB.yearClosings===undefined) DB.yearClosings=[];
   if(DB.archivedEntries===undefined) DB.archivedEntries=[];
   if(DB.security.autoLockMin===undefined) DB.security.autoLockMin = 10;
+  if(DB.security.editPin===undefined) DB.security.editPin = null;
   if(DB.security.backupPass===undefined) DB.security.backupPass = '';
   if(DB.cloudSync===undefined) DB.cloudSync={googleDrive:{clientId:'', connected:false}, dropbox:{accessToken:''}, onedrive:{accessToken:''}, firebase:{dbUrl:''}};
   if(DB.settings===undefined) DB.settings={thermalWidth:'80mm'};
@@ -1226,7 +1235,15 @@ function flushSaveDB(){
   return _saveChain;
 }
 function sessionIsUnlocked(){ return !!(DB && !NEEDS_ENCRYPTION_SETUP && _dataEncKeyCache && _dataEncWrappedKeys && DB.security && DB.security.dataEncEnabled); }
-function forceFullSave(){ if(sessionIsUnlocked()){ _pendingSaveSnapshot = DB; return flushSaveDB(); } return _saveChain; }
+function forceFullSave(){
+  if(sessionIsUnlocked()){
+    _pendingSaveSnapshot = DB;
+    clearTimeout(backupWriteTimer); // the app may be closing right now — a 3s-deferred write could simply never fire
+    writeBackupToFolder();
+    return flushSaveDB();
+  }
+  return _saveChain;
+}
 /* saves immediately and confirms the exact write really landed on disk (used for key changes, setup, lock) */
 async function persistNow(){
   if(!sessionIsUnlocked()) return false;
@@ -1559,6 +1576,7 @@ async function submitEncryptionSetup(){
     DB.security.pinHash = ''; DB.security.biometricEnabled = false; DB.security.biometricCredId = ''; // legacy auth material is scrubbed
     DB.security.backupEncEnabled = true;
     if(DB.security.autoLockMin===undefined) DB.security.autoLockMin = 10;
+  if(DB.security.editPin===undefined) DB.security.editPin = null;
     DB.roles.adminPinHash = ''; DB.roles.operatorPinHash = '';
     if(needBackupPass){ DB.security.backupPass = b1; DB.security.backupPassHash = await sha256Hex(b1); _backupPassphraseCache = b1; }
     NEEDS_ENCRYPTION_SETUP = false;
@@ -1770,13 +1788,36 @@ async function storeBackupPassphrase(p){
   DB.security.backupEncEnabled = true;
   _backupPassphraseCache = p;
   saveDB();
+  // don't wait for the normal 3s-debounced write — a passphrase change must reach the connected
+  // folder's file right away, so an old-passphrase copy is never left sitting there
+  clearTimeout(backupWriteTimer);
+  await writeBackupToFolder();
 }
 async function changeBackupPassphrase(){
   if(!requireAdminRole()) return;
+  // if a passphrase is already set, prove knowledge of the CURRENT one first — otherwise anyone at an
+  // already-unlocked admin session could silently swap it out from under the real owner
+  if(DB.security.backupPassHash || DB.security.backupPass){
+    const cur = prompt(t('موجودہ بیک اپ پاس فریز درج کریں','Enter the current backup passphrase'));
+    if(cur===null) return;
+    const curHash = await sha256Hex(cur);
+    const known = DB.security.backupPass ? cur===DB.security.backupPass : curHash===DB.security.backupPassHash;
+    if(!known){ alert(t('موجودہ پاس فریز غلط ہے — تبدیل نہیں ہوا','Current passphrase is incorrect — not changed')); return; }
+  }
   const p = await promptBackupPassphrase(true);
   if(!p) return;
   await storeBackupPassphrase(p);
-  alert(t('پاس فریز تبدیل ہو گیا — نئے بیک اپ اسی سے کھلیں گے، پرانے بیک اپ پرانے پاس فریز سے۔','Passphrase changed — new backups use it; older backups still need the old passphrase.'));
+  // push the new passphrase to the connected folder RIGHT NOW — don't leave that file sitting there
+  // still encrypted with the passphrase that was just replaced, waiting on the normal 3s save debounce
+  let folderMsg = '';
+  if(backupDirHandle){
+    clearTimeout(backupWriteTimer);
+    const ok = await writeBackupToFolder();
+    folderMsg = ok
+      ? t(' منسلک فولڈر کی بیک اپ فائل بھی نئے پاس فریز سے فوراً اپڈیٹ کر دی گئی ✓',' The connected folder\'s backup file was also updated with the new passphrase immediately ✓')
+      : t(' — منسلک فولڈر کی فائل ابھی اپڈیٹ نہیں ہو سکی (اجازت درکار ہو سکتی ہے)؛ اگلی تبدیلی پر خود بخود دوبارہ کوشش ہوگی۔',' — could not update the connected folder\'s file right now (permission may be needed); it will retry automatically on the next change.');
+  }
+  alert(t('پاس فریز تبدیل ہو گیا — نئے بیک اپ اسی سے کھلیں گے، پرانے بیک اپ پرانے پاس فریز سے۔','Passphrase changed — new backups use it; older backups still need the old passphrase.')+folderMsg);
   renderSettingsModal();
 }
 async function getActiveBackupPassphrase(){
@@ -1824,11 +1865,11 @@ async function connectBackupFolder(){ if(!requireAdminRole()) return;
   }catch(e){ /* user cancelled the picker */ }
 }
 async function writeBackupToFolder(){
-  if(!backupDirHandle || !sessionIsUnlocked()) return;
+  if(!backupDirHandle || !sessionIsUnlocked()) return false;
   try{
     let perm = await backupDirHandle.queryPermission({mode:'readwrite'});
     if(perm!=='granted'){ perm = await backupDirHandle.requestPermission({mode:'readwrite'}); }
-    if(perm!=='granted') return;
+    if(perm!=='granted') return false;
     let json = JSON.stringify(DB, null, 2);
     let filename = 'RoznamchaMaal_Backup_Latest.json';
     if(backupEncEnabled()){
@@ -1836,7 +1877,7 @@ async function writeBackupToFolder(){
       // never pop a prompt() out of a silent timer. If none is cached yet, skip this
       // round rather than ever writing an unencrypted copy to disk.
       const autoPass = _backupPassphraseCache || (DB.security && DB.security.backupPass);
-      if(!autoPass) return;
+      if(!autoPass) return false;
       json = await encryptBackupJson(autoPass, json);
       filename = 'RoznamchaMaal_Backup_Latest.enc.json';
     }
@@ -1845,7 +1886,8 @@ async function writeBackupToFolder(){
     await writable.write(json);
     await writable.close();
     localStorage.setItem('rz_last_backup', new Date().toISOString());
-  }catch(e){ /* best-effort — silently skip if permission/gesture unavailable */ }
+    return true;
+  }catch(e){ return false; /* best-effort — silently skip if permission/gesture unavailable */ }
 }
 async function tryRestoreBackupHandle(){
   try{
@@ -1861,6 +1903,7 @@ async function downloadBackupNow(){ if(!requireAdminRole()) return;
     if(!pass) return; // cancelled or wrong passphrase — never fall back to a silent plain export
     json = await encryptBackupJson(pass, json);
   }
+  try{ localStorage.setItem('rz_manual_backup_done','yes'); }catch(e){}
   const blob = new Blob([json], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1950,10 +1993,27 @@ function renderSettingsModal(){ if(!requireAdminRole()) return;
     <div class="settings-row">
       <div class="st-title">📲 ${t('ایپ انسٹال کریں','Install App')}</div>
       <div style="font-size:12px;color:var(--ink-soft);">${t('ایک کلک میں یہ ایپ اپنے موبائل یا ڈیسک ٹاپ پر انسٹال کریں — پھر آفلائن بھی چلے گی۔ (نوٹ: فائل کو براہ راست کھولنے کے بجائے کسی HTTPS لنک سے کھولیں تاکہ انسٹال بٹن بہترین طریقے سے کام کرے۔)','Install this app to your phone or desktop in one click — it then also works offline. (Note: for the smoothest install, open this via an https:// link rather than directly from a downloaded file.)')}</div>
+      ${hasBackupSafety() ? '' : `<div class="lock-error" style="margin-top:6px;">⚠️ ${t('انسٹال کرنے سے پہلے بیک اپ فولڈر منسلک کرنا (یا کم از کم ایک بیک اپ ڈاؤن لوڈ کرنا) لازمی ہے — تاکہ ایپ کبھی ان انسٹال ہو یا براؤزر کا ڈیٹا صاف ہو تو آپ کا ڈیٹا محفوظ رہے۔','Connecting a backup folder (or at least downloading one backup) is required before installing — so your data survives even if the app is ever uninstalled or the browser\'s data is cleared.')}</div>`}
       <div class="btn-row">
-        <button class="btn gold sm" onclick="triggerPwaInstall()">📲 ${t('ابھی انسٹال کریں','Install Now')}</button>
+        <button class="btn gold sm" onclick="requireBackupThenInstall()">📲 ${t('ابھی انسٹال کریں','Install Now')}</button>
       </div>
       <div class="st-status" id="pwaInstallStatus"></div>
+    </div>
+
+    <div class="settings-row">
+      <div class="st-title">🗄️ ${t('ڈیٹا اسٹوریج کا پتہ','Data Storage Address')}</div>
+      <div style="font-size:12px;color:var(--ink-soft);line-height:1.7;">${t('آپ کا ڈیٹا اس ڈیوائس کے براؤزر کی اندرونی میموری میں محفوظ ہے (یہ فائل مینیجر میں عام فولڈر کی طرح نظر نہیں آتا)، اور نیچے دیے پتے سے جڑا ہوا ہے۔ اگر یہ ایپ یا اس کا انسٹال شدہ آئیکن کبھی حذف/ان انسٹال ہو جائے تو اسی پتے کو اسی براؤزر میں دوبارہ کھولیں یا دوبارہ انسٹال کریں — عام طور پر آپ کا ڈیٹا وہیں مل جائے گا (جب تک براؤزر کا ڈیٹا صاف نہ کیا گیا ہو)۔ مکمل یقین کے لیے یہ پتہ کہیں نوٹ یا بک مارک کر لیں، اور بیک اپ بھی وقتاً فوقتاً لیتے رہیں۔','Your data lives in this device\'s browser storage (it will not show up as a normal folder in File Manager), tied to the address below. If this app or its installed icon is ever removed/uninstalled, reopen or reinstall from this exact address in the same browser — your data will usually still be there (as long as the browser\'s site data hasn\'t been cleared). For full peace of mind, save this address as a note or bookmark, and keep taking backups too.')}</div>
+      <div class="btn-row" style="align-items:center;">
+        <input id="appAddressBox" type="text" readonly value="${kEsc(location.href)}" dir="ltr" style="flex:1;min-width:0;font-size:11.5px;" onclick="this.select();">
+        <button class="btn outline sm" onclick="copyAppAddress()">📋 ${t('کاپی کریں','Copy')}</button>
+      </div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:10px;border-top:1px dashed var(--rule,#d8cca4);padding-top:8px;">
+        📁 ${t('خودکار بیک اپ فولڈر کا پتہ','Automatic Backup Folder Address')}:
+        ${backupDirHandle
+          ? `<span dir="ltr" style="font-family:monospace;color:var(--ink);">${kEsc(backupDirHandle.name||'')}</span> <span style="color:var(--ok,#2f7d4f);">✓ ${t('منسلک','connected')}</span>`
+          : `<span>${t('کوئی فولڈر منسلک نہیں — نیچے "ایپ انسٹال کریں" کے سیکشن سے منسلک کریں','No folder connected — connect one from the "Install App" section below')}</span>`}
+        ${backupDirHandle ? `<div style="margin-top:3px;">${t('براؤزر سیکیورٹی کی وجہ سے فولڈر کا مکمل راستہ (فل پاتھ) ظاہر نہیں کیا جا سکتا — صرف فولڈر کا نام دکھایا جا سکتا ہے۔ اسی فولڈر میں ایک فائل بنتی/اپڈیٹ ہوتی رہتی ہے: ','For browser security reasons the folder\'s full path cannot be shown — only its name. A file inside that same folder keeps getting created/updated: ')}<span dir="ltr" style="font-family:monospace;">RoznamchaMaal_Backup_Latest${backupEncEnabled()?'.enc':''}.json</span></div>` : ''}
+      </div>
     </div>
 
     <div class="settings-row">
@@ -2067,6 +2127,14 @@ async function populateSafetyBackupsList(){
       <button class="btn outline sm" onclick="restoreSafetyBackup(${e.slot})">${t('بحال کریں','Restore')}</button>
     </div>`;
   }).join('');
+}
+function copyAppAddress(){
+  const box = document.getElementById('appAddressBox');
+  const addr = box ? box.value : location.href;
+  const done = ()=>alert(t('پتہ کاپی ہو گیا','Address copied'));
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(addr).then(done).catch(()=>{ if(box){ box.select(); document.execCommand('copy'); done(); } });
+  } else if(box){ box.select(); document.execCommand('copy'); done(); }
 }
 function setOrgName(v){ if(!requireAdminRole()) return; DB.orgName = (v||'').trim(); saveDB(); }
 function setWaCountryCode(v){ if(!requireAdminRole()) return; DB.waCountryCode = (v||'').replace(/\D/g,'').trim() || '92'; saveDB(); }
@@ -2439,7 +2507,7 @@ function renderGlobalSearchResults(qRaw){
   const khataHtml = khataResults.slice(0,60).map(k=>`
     <div class="khata-item" onclick="searchGoKhata('${k.id}')">
       <div class="khata-num">${k.number}</div>
-      <div class="khata-info"><div class="nm">${LANG==='ur'?k.name_ur:k.name_en}</div><div class="rel">${k.area||''}</div></div>
+      <div class="khata-info"><div class="nm">${kEsc(LANG==='ur'?k.name_ur:k.name_en)}</div><div class="rel">${k.area||''}</div></div>
       <div class="arrow">›</div>
     </div>`).join('');
 
@@ -2827,9 +2895,9 @@ function carryForwardNextMonth(){ if(!requireAdminRole()) return;
 function selectMonth(m){ selectedMonth = m; roznamchaPage = 1; render(); }
 function changeRoznamchaPage(delta){ roznamchaPage += delta; render(); }
 
-function printRoznamcha(){
-  const monthEntries = DB.entries.filter(e=>e.month===selectedMonth).sort((a,b)=>a.date.localeCompare(b.date));
-  const shiftedIds = (DB.monthShifts && DB.monthShifts[selectedMonth]) || [];
+function roznamchaMonthHtml(month){
+  const monthEntries = DB.entries.filter(e=>e.month===month).sort((a,b)=>a.date.localeCompare(b.date));
+  const shiftedIds = (DB.monthShifts && DB.monthShifts[month]) || [];
   const monthTotal = monthEntries.reduce((a,e)=>a+e.total,0);
   // month-wide used heads only needed for the shifted-amount summary on the last page
   const monthUsedHeadIds = DB.heads.filter(h=>monthEntries.some(e=>(e.amounts[h.id]||0)>0)).map(h=>h.id);
@@ -2873,8 +2941,10 @@ function printRoznamcha(){
       </table>
     </div>`;
   }).join('');
-
-  printReport(t('روزنامچہ','Daybook')+' — '+monthLabel(selectedMonth,LANG), pagesHtml);
+  return pagesHtml;
+}
+function printRoznamcha(){
+  printReport(t('روزنامچہ','Daybook')+' — '+monthLabel(selectedMonth,LANG), roznamchaMonthHtml(selectedMonth));
 }
 function shareRoznamcha(){
   const monthEntries = DB.entries.filter(e=>e.month===selectedMonth).sort((a,b)=>a.date.localeCompare(b.date));
@@ -2906,8 +2976,8 @@ function renderKhataList(){
     return `<div class="khata-item" onclick="openKhata('${k.id}')">
       <div class="khata-num">${k.number}</div>
       <div class="khata-info">
-        <div class="nm">${LANG==='ur'?k.name_ur:k.name_en}</div>
-        <div class="rel">${LANG==='ur'?(k.rel_ur||''):(k.rel_en||'')} · ${t('کل','Total')}: ${fmtNum(bal)}</div>
+        <div class="nm">${kEsc(LANG==='ur'?k.name_ur:k.name_en)}</div>
+        <div class="rel">${kEsc(LANG==='ur'?(k.rel_ur||''):(k.rel_en||''))} · ${t('کل','Total')}: ${fmtNum(bal)}</div>
       </div>
       <div class="arrow">${LANG==='ur'?'‹':'›'}</div>
     </div>`;
@@ -2940,7 +3010,7 @@ function renderDeleteKhataModal(){
   const items = DB.khatas.slice().sort((a,b)=>a.number-b.number).map(k=>`
     <div class="khata-item" style="cursor:default;">
       <div class="khata-num">${k.number}</div>
-      <div class="khata-info"><div class="nm">${LANG==='ur'?k.name_ur:k.name_en}</div></div>
+      <div class="khata-info"><div class="nm">${kEsc(LANG==='ur'?k.name_ur:k.name_en)}</div></div>
       <button class="btn danger sm" onclick="deleteKhataFromModal('${k.id}')">${t('حذف','Delete')}</button>
     </div>`).join('');
   showModal(`<h3>${t('کھاتہ حذف کریں','Delete Account')}</h3>${items || `<div class="empty">${t('کوئی کھاتہ موجود نہیں','No accounts')}</div>`}`);
@@ -3007,9 +3077,9 @@ function renderKhataDetail(id){
   return `
     <div class="card">
       <button class="btn outline sm" onclick="selectedKhataId=null; render();">${LANG==='ur'?'› واپس':'‹ Back'}</button>
-      <h2 style="margin-top:12px;"><span class="khata-num" style="display:inline-flex;">${k.number}</span> ${LANG==='ur'?k.name_ur:k.name_en} <span class="badge" style="background:var(--gold-light);color:var(--cover-green-dark);">${k.year||DB.fiscalYear}</span></h2>
-      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">${LANG==='ur'?(k.rel_ur||''):(k.rel_en||'')} ${k.area?(' · '+k.area):''}</div>
-      ${k.wasiyatNo ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">${t('وصیت نمبر','Wasiyat No.')}: <b style="color:var(--ink);">${k.wasiyatNo}</b></div>` : ''}
+      <h2 style="margin-top:12px;"><span class="khata-num" style="display:inline-flex;">${k.number}</span> ${kEsc(LANG==='ur'?k.name_ur:k.name_en)} <span class="badge" style="background:var(--gold-light);color:var(--cover-green-dark);">${k.year||DB.fiscalYear}</span></h2>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">${kEsc(LANG==='ur'?(k.rel_ur||''):(k.rel_en||''))} ${k.area?(' · '+k.area):''}</div>
+      ${k.wasiyatNo ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">${t('وصیت نمبر','Wasiyat No.')}: <b style="color:var(--ink);">${kEsc(k.wasiyatNo)}</b></div>` : ''}
 
       <div class="fin-grid">
         <div class="fin-box"><div class="l">${t('سابقہ بقایا','Previous balance')}</div><div class="n">${fmtNum(prevBalance)}</div></div>
@@ -3075,13 +3145,13 @@ function khataPrintSummaryTableHtml(k, entries){
   const dueRow = heads.map((h,i)=>grandRow[i]-collRow[i]);
   const sum = (arr)=>arr.reduce((a,b)=>a+b,0);
   const headTh = heads.map(h=>`<th>${LANG==='ur'?h.ur:h.en}</th>`).join('') + `<th>${t('میزان','Total')}</th>`;
-  const row = (label, arr)=>`<tr><td>${label}</td>${arr.map(v=>`<td>${fmtNum(v)}</td>`).join('')}<td><b>${fmtNum(sum(arr))}</b></td></tr>`;
+  const row = (label, arr)=>`<tr><td>${label}</td>${arr.map(v=>`<td>${fmtNumSigned(v)}</td>`).join('')}<td><b>${fmtNumSigned(sum(arr))}</b></td></tr>`;
   // تفصیل (Detail): a receipt-wise breakdown — every entry that carries an amount in one of these heads,
   // one row per receipt, with month / date / receipt no. (کتاب/رسید), so it can be traced back to the daybook.
   const detailEntries = entries.filter(e=>heads.some(h=>(e.amounts[h.id]||0)>0)).slice().sort((a,b)=>a.date.localeCompare(b.date));
   const detailRows = detailEntries.map(e=>{
     const vals = heads.map(h=>e.amounts[h.id]||0);
-    return `<tr><td>${monthLabel(e.month,LANG)}</td><td dir="ltr">${e.date}</td><td dir="ltr">${kEsc(e.bookNo||'-')}/${kEsc(e.receiptNo||'-')}</td>${vals.map(v=>`<td>${v?fmtNum(v):'-'}</td>`).join('')}<td><b>${fmtNum(sum(vals))}</b></td></tr>`;
+    return `<tr><td>${monthLabel(e.month,LANG)}</td><td dir="ltr">${e.date}</td><td dir="ltr">${kEsc(e.bookNo||'-')}/${kEsc(e.receiptNo||'-')}</td>${vals.map(v=>`<td>${v?fmtNumSigned(v):'-'}</td>`).join('')}<td><b>${fmtNumSigned(sum(vals))}</b></td></tr>`;
   }).join('');
   const detailHeadTh = `<th>${t('ماہ','Month')}</th><th>${t('تاریخ','Date')}</th><th>${t('رسید نمبر','Receipt No.')}<div style="font-weight:400;font-size:10px;">(${t('کتاب/رسید','Book/Receipt')})</div></th>` + headTh;
   return `
@@ -3095,8 +3165,8 @@ function khataPrintSummaryTableHtml(k, entries){
     <table><thead><tr>${detailHeadTh}</tr></thead>
       <tbody>
         ${detailRows || `<tr><td colspan="${3+heads.length+1}">${t('کوئی رسید نہیں','No receipts')}</td></tr>`}
-        <tr class="total-row"><td colspan="3">${t('کل وصولی','Total collected')}</td>${collRow.map(v=>`<td><b>${fmtNum(v)}</b></td>`).join('')}<td><b>${fmtNum(sum(collRow))}</b></td></tr>
-        <tr class="total-row"><td colspan="3">${t('بقایا','Balance due')}</td>${dueRow.map(v=>`<td><b>${fmtNum(v)}</b></td>`).join('')}<td><b>${fmtNum(sum(dueRow))}</b></td></tr>
+        <tr class="total-row"><td colspan="3">${t('کل وصولی','Total collected')}</td>${collRow.map(v=>`<td><b>${fmtNumSigned(v)}</b></td>`).join('')}<td><b>${fmtNumSigned(sum(collRow))}</b></td></tr>
+        <tr class="total-row"><td colspan="3">${t('بقایا','Balance due')}</td>${dueRow.map(v=>`<td><b>${fmtNumSigned(v)}</b></td>`).join('')}<td><b>${fmtNumSigned(sum(dueRow))}</b></td></tr>
       </tbody></table>
     ${missing.length?`<div class="note">${t('یہ مدات نہیں ملیں: ','These heads were not found: ')}${missing.join('، ')}</div>`:''}`;
 }
@@ -3107,7 +3177,7 @@ function printKhata(id){
   const rel = LANG==='ur'?(k.rel_ur||''):(k.rel_en||'');
   const html = `
     <div class="org-name">${t('کھاتہ','Account')} ${k.number} — ${kEsc(name)}${rel?` <span style="font-weight:400;">(${kEsc(rel)})</span>`:''}</div>
-    <div class="fin"><div>${t('وصیت نمبر','Wasiyat No.')}<b>${k.wasiyatNo||'-'}</b></div></div>
+    <div class="fin"><div>${t('وصیت نمبر','Wasiyat No.')}<b>${kEsc(k.wasiyatNo||'-')}</b></div></div>
     ${khataPrintSummaryTableHtml(k, entries)}`;
   printReport(`${t('کھاتہ','Account')} ${k.number} — ${name}`, html);
 }
@@ -3125,8 +3195,8 @@ function shareKhata(id){
   const detailTotal = entries.reduce((a,e)=>a+e.total,0);
   const grandTotal = (k.prevBalance||0)+(k.budgetYear||0);
   const baqaya = grandTotal - detailTotal;
-  let text = `${t('کھاتہ','Account')} #${k.number} — ${LANG==='ur'?k.name_ur:k.name_en}\n`;
-  if(k.wasiyatNo) text += `${t('وصیت نمبر','Wasiyat No.')}: ${k.wasiyatNo}\n`;
+  let text = `${t('کھاتہ','Account')} #${k.number} — ${kEsc(LANG==='ur'?k.name_ur:k.name_en)}\n`;
+  if(k.wasiyatNo) text += `${t('وصیت نمبر','Wasiyat No.')}: ${kEsc(k.wasiyatNo)}\n`;
   text += `${t('سابقہ بقایا','Previous balance')}: ${fmtNum(k.prevBalance||0)}\n`;
   text += `${t('بجٹ سال رواں','Current year budget')}: ${fmtNum(k.budgetYear||0)}\n`;
   text += `${t('کل میزان','Grand total')}: ${fmtNum(grandTotal)}\n\n`;
@@ -3879,7 +3949,7 @@ function printSummary(){
   const khataRows = DB.khatas.slice().sort((a,b)=>a.number-b.number).map(k=>{
     const coll = DB.entries.filter(e=>e.khataId===k.id).reduce((a,e)=>a+e.total,0);
     const g = (k.prevBalance||0)+(k.budgetYear||0);
-    return `<tr><td>${k.number}</td><td>${LANG==='ur'?k.name_ur:k.name_en}</td><td>${fmtNum(k.prevBalance||0)}</td><td>${fmtNum(k.budgetYear||0)}</td><td>${fmtNum(g)}</td><td>${fmtNum(coll)}</td><td>${fmtNum(g-coll)}</td></tr>`;
+    return `<tr><td>${k.number}</td><td>${kEsc(LANG==='ur'?k.name_ur:k.name_en)}</td><td>${fmtNum(k.prevBalance||0)}</td><td>${fmtNum(k.budgetYear||0)}</td><td>${fmtNum(g)}</td><td>${fmtNum(coll)}</td><td>${fmtNum(g-coll)}</td></tr>`;
   }).join('');
   const html = `
     <div class="fin"><div>${t('کل مجموعی وصولی','Total collected')}<b>${fmtNum(grand)}</b></div>
@@ -4351,7 +4421,7 @@ function renderDefaultersModal(){
       const lock = (!sel && !allSelected && defaultersHeadIds.length>=4);
       return `<button type="button" class="pill ${sel?'active':''}" ${lock?'disabled':''} style="${lock?'opacity:.4;cursor:not-allowed;':''}" onclick="toggleDefaultersHead('${h.id}')">${LANG==='ur'?h.ur:h.en}</button>`;
     }).join('');
-  const khataOptions = `<option value="all">${t('تمام کھاتہ جات','All accounts')}</option>` + DB.khatas.slice().sort((a,b)=>a.number-b.number).map(k=>`<option value="${k.id}" ${defaultersKhataId===k.id?'selected':''}>${k.number} — ${LANG==='ur'?k.name_ur:k.name_en}</option>`).join('');
+  const khataOptions = `<option value="all">${t('تمام کھاتہ جات','All accounts')}</option>` + DB.khatas.slice().sort((a,b)=>a.number-b.number).map(k=>`<option value="${k.id}" ${defaultersKhataId===k.id?'selected':''}>${k.number} — ${kEsc(LANG==='ur'?k.name_ur:k.name_en)}</option>`).join('');
   const rangeOn = defaultersRangeActive();
   const rg = defaultersRange();
   const paidLbl = rangeOn ? t('ادائیگی (منتخب مدت)','Paid (selected period)') : t('کل ادائیگی','Total paid');
@@ -4424,7 +4494,7 @@ function defaultersDetailedRows(khatas, heads){
 function defaultersDetailedBlockHtml(r, heads){
   const sum = (arr)=>arr.reduce((a,b)=>a+b,0);
   const headTh = heads.map(h=>`<th>${LANG==='ur'?h.ur:h.en}</th>`).join('') + `<th>${t('میزان','Total')}</th>`;
-  const row = (label, arr)=>`<tr><td>${label}</td>${arr.map(v=>`<td>${fmtNum(v)}</td>`).join('')}<td><b>${fmtNum(sum(arr))}</b></td></tr>`;
+  const row = (label, arr)=>`<tr><td>${label}</td>${arr.map(v=>`<td>${fmtNumSigned(v)}</td>`).join('')}<td><b>${fmtNumSigned(sum(arr))}</b></td></tr>`;
   return `
     <div class="block-label">${r.k.number}. ${kEsc(r.name)}${r.rel?` (${kEsc(r.rel)})`:''}</div>
     <table><thead><tr><th>${t('مد','Head')}</th>${headTh}</tr></thead>
@@ -4844,7 +4914,7 @@ function renderCashBook(){
   cashBookExpensePage = expensePageInfo.page;
   const expensePagerHtml = paginationBarHtml(expensePageInfo.page, expensePageInfo.totalPages, expenseRows.length, t('اندراجات','entries'), 'changeCashBookExpensePage(-1)', 'changeCashBookExpensePage(1)');
   const expenseHtml = expenseRows.length ? `${expensePagerHtml}<div class="tbl-wrap"><table class="ledger"><thead><tr><th>#</th><th>${t('تاریخ','Date')}</th><th>${t('بل نمبر','Bill No.')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr></thead>
-    <tbody>${expensePageInfo.items.map((e,i)=>{const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${(expensePageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${e.lateEntry?` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>`:''}</td><td>${e.billNo||'-'}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td></tr>`;}).join('')}
+    <tbody>${expensePageInfo.items.map((e,i)=>{const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${(expensePageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${e.lateEntry?` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>`:''}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td></tr>`;}).join('')}
     <tr class="total-row"><td colspan="5">${t('کل خرچ (تمام صفحات)','Total expense (all pages)')}</td><td>${fmtNum(totalExpense)}</td></tr></tbody></table></div>${expensePagerHtml}`
     : `<div class="empty">${t('اس ماہ کوئی خرچ درج نہیں','No expenses recorded this month')}</div>`;
 
@@ -4882,23 +4952,25 @@ function changeCashBookExpensePage(delta){ cashBookExpensePage += delta; render(
 function changeExpenseEntriesPage(delta){ expenseEntriesPage += delta; render(); }
 function changeIncomeEntriesPage(delta){ incomeEntriesPage += delta; render(); }
 function resolveIncomeMonth(dateStr){ return resolveExpenseMonth(dateStr); } // same Local Kharch month/closed-month rules apply to income
-function printCashBook(){
-  const incomeRows = cashBookIncomeRows(localSelectedMonth);
+function cashBookMonthHtml(month){
+  const incomeRows = cashBookIncomeRows(month);
   const totalIncome = incomeRows.reduce((a,r)=>a+r.amount,0);
-  const expenseRows = DB.expenses.filter(e=>e.month===localSelectedMonth).sort((a,b)=>a.date.localeCompare(b.date));
+  const expenseRows = DB.expenses.filter(e=>e.month===month).sort((a,b)=>a.date.localeCompare(b.date));
   const totalExpense = expenseRows.reduce((a,e)=>a+e.amount,0);
-  const monthsBefore = localAllMonths().filter(m=>m<localSelectedMonth);
+  const monthsBefore = localAllMonths().filter(m=>m<month);
   const openingForMonth = monthsBefore.length ? cashRunningBalance(monthsBefore[monthsBefore.length-1]) : (parseFloat(DB.cashOpeningBalance)||0);
   const balance = openingForMonth + totalIncome - totalExpense;
-  const html = `
+  return `
     <h3 style="font-size:14px;">${t('آمد','Income')}</h3>
     <table><thead><tr><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr></thead>
     <tbody>${incomeRows.map(r=>`<tr><td>${r.detail}</td><td>${fmtNum(r.amount)}</td></tr>`).join('')}<tr class="total-row"><td>${t('کل آمد','Total income')}</td><td>${fmtNum(totalIncome)}</td></tr></tbody></table>
     <h3 style="font-size:14px;">${t('اخراجات','Expenses')}</h3>
     <table><thead><tr><th>#</th><th>${t('تاریخ','Date')}</th><th>${t('بل نمبر','Bill No.')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr></thead>
-    <tbody>${expenseRows.map((e,i)=>{const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${i+1}</td><td>${e.date}</td><td>${e.billNo||'-'}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td>${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td></tr>`;}).join('')}<tr class="total-row"><td colspan="5">${t('کل خرچ','Total expense')}</td><td>${fmtNum(totalExpense)}</td></tr></tbody></table>
+    <tbody>${expenseRows.map((e,i)=>{const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${i+1}</td><td>${e.date}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td>${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td></tr>`;}).join('')}<tr class="total-row"><td colspan="5">${t('کل خرچ','Total expense')}</td><td>${fmtNum(totalExpense)}</td></tr></tbody></table>
     <div class="fin"><div>${t('ابتدائی بیلنس','Opening balance')}<b>${fmtNum(openingForMonth)}</b></div><div>${t('کل آمد','Total income')}<b>${fmtNum(totalIncome)}</b></div><div>${t('کل خرچ','Total expense')}<b>${fmtNum(totalExpense)}</b></div><div>${t('اختتامی بیلنس','Closing balance')}<b>${fmtNum(balance)}</b></div></div>`;
-  printReport(t('کیش بک','Cash Book')+' — '+monthLabel(localSelectedMonth,LANG), html);
+}
+function printCashBook(){
+  printReport(t('کیش بک','Cash Book')+' — '+monthLabel(localSelectedMonth,LANG), cashBookMonthHtml(localSelectedMonth));
 }
 function shareCashBook(){
   const incomeRows = cashBookIncomeRows(localSelectedMonth);
@@ -5071,7 +5143,7 @@ function renderExpenseEntries(){
   const rows = expEntriesPageInfo.items.map((e,i)=>{
     const h = DB.expenseHeads.find(x=>x.id===e.headId);
     const lateBadge = e.lateEntry ? ` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>` : '';
-    return `<tr><td>${(expEntriesPageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${lateBadge}</td><td>${e.billNo||'-'}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td><b>${fmtNum(e.amount)}</b></td><td><button class="row-del" title="${t('حذف کریں','Delete')}" onclick="deleteExpense('${e.id}')">🗑</button></td></tr>`;
+    return `<tr><td>${(expEntriesPageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${lateBadge}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td><b>${fmtNum(e.amount)}</b></td><td><button class="row-del" title="${t('حذف کریں','Delete')}" onclick="deleteExpense('${e.id}')">🗑</button></td></tr>`;
   }).join('');
   const total = monthExpenses.reduce((a,e)=>a+e.amount,0);
 
@@ -5103,7 +5175,7 @@ function renderExpenseEntries(){
 }
 function printExpenseEntries(){
   const monthExpenses = DB.expenses.filter(e=>e.month===localSelectedMonth).sort((a,b)=>a.date.localeCompare(b.date));
-  const rows = monthExpenses.map((e,i)=>{ const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${i+1}</td><td>${e.date}</td><td>${e.billNo||'-'}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td>${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td></tr>`; }).join('');
+  const rows = monthExpenses.map((e,i)=>{ const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${i+1}</td><td>${e.date}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td>${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td></tr>`; }).join('');
   const total = monthExpenses.reduce((a,e)=>a+e.amount,0);
   const html = `<table><thead><tr><th>#</th><th>${t('تاریخ','Date')}</th><th>${t('بل نمبر','Bill No.')}</th><th>${t('مدوار اخراجات','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('بل رقم','Bill Amount')}</th></tr></thead>
     <tbody>${rows}<tr class="total-row"><td colspan="5">${t('کل میزان','Grand total')}</td><td>${fmtNum(total)}</td></tr></tbody></table>`;
@@ -5214,7 +5286,7 @@ function filterKhataDropdown(q){
   if(!matches.length){
     list.innerHTML = `<div class="kdd-empty">${t('کوئی کھاتہ نہیں ملا','No matching account')}</div>`;
   } else {
-    list.innerHTML = matches.map(k=>`<div class="kdd-item" onmousedown="pickKhataForEntry('${k.id}')">${k.number} — ${LANG==='ur'?k.name_ur:k.name_en}</div>`).join('');
+    list.innerHTML = matches.map(k=>`<div class="kdd-item" onmousedown="pickKhataForEntry('${k.id}')">${k.number} — ${kEsc(LANG==='ur'?k.name_ur:k.name_en)}</div>`).join('');
   }
   list.style.display = 'block';
 }
@@ -5223,7 +5295,7 @@ function pickKhataForEntry(id){
   if(!k) return;
   entryDraft.khataId = id;
   const inp = document.getElementById('entryKhataSearch');
-  if(inp) inp.value = `${k.number} — ${LANG==='ur'?k.name_ur:k.name_en}`;
+  if(inp) inp.value = `${k.number} — ${kEsc(LANG==='ur'?k.name_ur:k.name_en)}`;
   const list = document.getElementById('khataDropdownList');
   if(list) list.style.display = 'none';
 }
@@ -5396,7 +5468,7 @@ function printSingleReceipt(id){
         <div>${t('کتاب نمبر','Book No.')}<b>${e.bookNo||'-'}</b></div>
         <div>${t('تاریخ','Date')}<b>${e.date}</b></div>
         ${k?`<div>${t('کھاتہ نمبر','Account No.')}<b>${k.number}</b></div>`:''}
-        ${k && k.wasiyatNo?`<div>${t('وصیت نمبر','Wasiyat No.')}<b>${k.wasiyatNo}</b></div>`:''}
+        ${k && k.wasiyatNo?`<div>${t('وصیت نمبر','Wasiyat No.')}<b>${kEsc(k.wasiyatNo)}</b></div>`:''}
       </div>
       <div style="margin-bottom:10px; font-size:13.5px;"><b>${t('نام','Name')}:</b> ${nm} ${rel?(' — '+rel):''}</div>
       <table><thead><tr><th>${t('مد','Head')}</th><th>${t('رقم','Amount')}</th></tr></thead>
@@ -6385,9 +6457,17 @@ function requireEditPin(action){
   window.__pinPromptCb = async (pin)=>{
     const rem = thrRemainingMs('rz_thr_edit');
     if(rem>0){ alert(t('بہت زیادہ غلط کوششیں — '+fmtWait(rem)+' بعد کوشش کریں','Too many wrong attempts — try again in '+fmtWait(rem))); return; }
-    const hash = await sha256Hex(pin||'');
-    if(hash===DB.security.editPinHash){ thrReset('rz_thr_edit'); closeModal(); action(); }
-    else{ thrFail('rz_thr_edit'); alert(t('غلط پن — دوبارہ کوشش کریں','Wrong PIN — please try again')); }
+    pin = pin||'';
+    // salted PBKDF2 record (current format) — falls back to an old unsalted SHA-256 hash only for a PIN
+    // set before this upgrade, and transparently re-saves it in the stronger format on that first success
+    let ok = false;
+    if(DB.security.editPin) ok = await checkHashRecord(DB.security.editPin, pin);
+    else if(DB.security.editPinHash) ok = (await sha256Hex(pin))===DB.security.editPinHash;
+    if(ok){
+      thrReset('rz_thr_edit');
+      if(!DB.security.editPin){ DB.security.editPin = await makeHashRecord(pin); DB.security.editPinHash=''; saveDB(); }
+      closeModal(); action();
+    } else{ thrFail('rz_thr_edit'); alert(t('غلط پن — دوبارہ کوشش کریں','Wrong PIN — please try again')); }
   };
   showModal(`
     <h3>${t('پن درج کریں','Enter PIN')}</h3>
@@ -6419,10 +6499,10 @@ async function saveNewPin(kind){
   const p2 = document.getElementById('newPin2').value;
   if(!/^\d{4,6}$/.test(p1)){ alert(t('پن 4 سے 6 ہندسوں کا ہونا چاہیے','PIN must be 4–6 digits')); return; }
   if(p1!==p2){ alert(t('پن مماثل نہیں ہے','PINs do not match')); return; }
-  DB.security.editPinHash = await sha256Hex(p1); DB.security.editPinEnabled = true;
+  DB.security.editPin = await makeHashRecord(p1); DB.security.editPinHash = ''; DB.security.editPinEnabled = true;
   saveDB(); flushSaveDB(); closeModal(); renderSettingsModal();
 }
-function disableEditPin(){ if(!requireAdminRole()) return; DB.security.editPinEnabled=false; DB.security.editPinHash=''; saveDB(); renderSettingsModal(); }
+function disableEditPin(){ if(!requireAdminRole()) return; DB.security.editPinEnabled=false; DB.security.editPinHash=''; DB.security.editPin=null; saveDB(); renderSettingsModal(); }
 
 /* ---- Unlock screen: shown on every launch (and after an auto-lock) because the data is always encrypted ----
    Accepts a numeric PIN (on-screen keypad) OR any passphrase (device keyboard). There is no separate
@@ -6548,6 +6628,132 @@ function unlockApp(role){
   startSessionGuards();
   startAutoSaveGuards();
   requestPersistentStorage();
+  if(role==='admin') setTimeout(checkMonthlyAutoExport, 1200); // small delay: let the CDN PDF libs finish loading first
+}
+
+/* ============ AUTOMATIC MONTHLY PDF EXPORT (روزنامچہ + کیش بک) ============
+   The moment a new calendar month begins (checked once per admin unlock, not on every render), the just-
+   completed previous month's Daybook (روزنامچہ) and Cash Book (کیش بک) entries are combined into one PDF
+   and downloaded to the device automatically — a permanent offline copy that survives even if the app's
+   own data is ever lost. Tracked per-device via localStorage so it fires at most once per month, and only
+   when that month actually has data. Runs for the Admin role only (matches every other export action). */
+function prevCalendarMonth(ym){
+  const y = parseInt(ym.slice(0,4),10), m = parseInt(ym.slice(5,7),10);
+  return m===1 ? (y-1)+'-12' : y+'-'+pad2(m-1);
+}
+function monthHasAnyData(month){
+  return DB.entries.some(e=>e.month===month) || DB.expenses.some(e=>e.month===month) || cashBookIncomeRows(month).some(r=>r.amount>0);
+}
+async function checkMonthlyAutoExport(){
+  try{
+    if(!sessionIsUnlocked() || CURRENT_ROLE!=='admin') return;
+    const target = prevCalendarMonth(toMonth(todayStr()));
+    const doneKey = 'rz_auto_export_'+target;
+    if(localStorage.getItem(doneKey)==='done') return;
+    if(!monthHasAnyData(target)) return; // nothing happened that month — nothing to export, don't mark it either
+    await autoExportMonthPdf(target);
+    localStorage.setItem(doneKey, 'done');
+  }catch(e){ /* best-effort — never blocks the app opening */ }
+}
+async function waitForPdfLibs(maxWaitMs){
+  const start = Date.now();
+  while(!(window.jspdf && window.html2canvas)){
+    if(Date.now()-start > maxWaitMs) return false;
+    await new Promise(r=>setTimeout(r,500));
+  }
+  return true;
+}
+async function autoExportMonthPdf(month){
+  const label = monthLabel(month,LANG);
+  const title = t('ماہانہ آرکائیو','Monthly Archive')+' — '+label;
+  const body = `
+    <h2 style="font-size:15px;margin:0 0 8px;">${t('روزنامچہ','Daybook')}</h2>
+    ${roznamchaMonthHtml(month)}
+    <h2 style="font-size:15px;margin:18px 0 8px;">${t('کیش بک','Cash Book')}</h2>
+    ${cashBookMonthHtml(month)}`;
+  const libsReady = await waitForPdfLibs(6000);
+  if(libsReady){
+    try{ await autoDownloadPdfSilent(title, body); return; }
+    catch(e){ /* fall through to the offline HTML fallback below */ }
+  }
+  // no internet / CDN unreachable / PDF render failed — still guarantee SOME permanent offline copy
+  // by downloading a plain self-contained HTML file instead (never depends on any external library)
+  downloadHtmlArchive(title, body);
+}
+/* Same rendering approach as downloadReportPdf(), but never closes an open modal (this runs unattended
+   in the background right after unlock) and never shows an alert on failure — the caller decides the
+   fallback instead. */
+async function autoDownloadPdfSilent(title, bodyHtml){
+  const orgName = (DB.orgName||'').trim();
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed; left:-9999px; top:0; width:900px; background:#fff; padding:24px; font-family:"Noto Nastaliq Urdu","Inter",sans-serif; color:#2a2116;';
+  holder.dir = LANG==='ur' ? 'rtl' : 'ltr';
+  holder.innerHTML = `
+    <style>
+      table{width:100%; border-collapse:collapse; font-size:13px; margin-bottom:14px;}
+      th,td{border:1px solid #ccc; padding:6px 8px; text-align:center;}
+      th{background:#eee0b6;}
+      tr.total-row td{background:#f0e9d2; font-weight:700;}
+      .fin{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px;}
+      .fin div{border:1px solid #ccc; border-radius:6px; padding:8px 12px; font-size:12px;}
+      .fin b{display:block; font-size:15px; margin-top:2px;}
+    </style>
+    ${orgName?`<div style="font-size:15px;font-weight:700;margin-bottom:2px;">${orgName}</div>`:''}
+    <h1 style="font-size:18px;margin:0 0 2px;">${title}</h1>
+    <div style="font-size:12px;color:#5c5140;margin-bottom:16px;">${new Date().toLocaleString(LANG==='ur'?'ur':'en-US')}</div>
+    ${bodyHtml}`;
+  document.body.appendChild(holder);
+  try{
+    const canvas = await window.html2canvas(holder, {scale:2, useCORS:true});
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p','pt','a4');
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW;
+    const imgH = canvas.height * (imgW/canvas.width);
+    let heightLeft = imgH, position = 0;
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+    heightLeft -= pageH;
+    while(heightLeft > 0){
+      position = heightLeft - imgH;
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+      heightLeft -= pageH;
+    }
+    pdf.save(title.replace(/\s+/g,'_')+'.pdf');
+  }finally{
+    holder.remove();
+  }
+}
+/* Offline-safe fallback: a single self-contained HTML file (no CDN, no library) that opens in any
+   browser and can be printed or "Saved as PDF" manually — used only when the PDF libraries could not
+   be reached (e.g. the device was offline right when the month rolled over). */
+function downloadHtmlArchive(title, bodyHtml){
+  const orgName = (DB.orgName||'').trim();
+  const html = `<!DOCTYPE html><html dir="${LANG==='ur'?'rtl':'ltr'}" lang="${LANG}"><head><meta charset="UTF-8"><title>${title}</title>
+  <style>
+    body{font-family:'Noto Nastaliq Urdu','Inter',sans-serif; color:#2a2116; padding:24px; max-width:900px; margin:0 auto;}
+    table{width:100%; border-collapse:collapse; font-size:13px; margin-bottom:14px;}
+    th,td{border:1px solid #ccc; padding:6px 8px; text-align:center;}
+    th{background:#eee0b6;}
+    tr.total-row td{background:#f0e9d2; font-weight:700;}
+    .fin{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px;}
+    .fin div{border:1px solid #ccc; border-radius:6px; padding:8px 12px; font-size:12px;}
+    .fin b{display:block; font-size:15px; margin-top:2px;}
+    @media print{ body{padding:0;} }
+  </style></head>
+  <body>
+    ${orgName?`<div style="font-size:15px;font-weight:700;margin-bottom:2px;">${kEsc(orgName)}</div>`:''}
+    <h1 style="font-size:18px;margin:0 0 2px;">${title}</h1>
+    <div style="font-size:12px;color:#5c5140;margin-bottom:16px;">${new Date().toLocaleString(LANG==='ur'?'ur':'en-US')}</div>
+    ${bodyHtml}
+  </body></html>`;
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = title.replace(/\s+/g,'_')+'.html';
+  document.body.appendChild(a); a.click(); a.remove();
 }
 
 /* ============ PWA: install prompt + service worker registration ============
@@ -6642,6 +6848,35 @@ window.addEventListener('appinstalled', ()=>{
   const btn = document.getElementById('pwaInstallBtn');
   if(btn) btn.style.display = 'none';
 });
+/* Whether SOME real, outside-the-browser copy of the data is known to exist: either an automatic
+   backup folder is connected, or the person has downloaded at least one manual backup file. Used to
+   gate the Install button — installing without either means an uninstall/clear-data event could wipe
+   the only copy of the data that exists. */
+function hasBackupSafety(){
+  return !!backupDirHandle || localStorage.getItem('rz_manual_backup_done')==='yes';
+}
+async function requireBackupThenInstall(){
+  if(!requireAdminRole()) return;
+  if(hasBackupSafety()){ triggerPwaInstall(); return; }
+  showModal(`
+    <h3>⚠️ ${t('انسٹال سے پہلے بیک اپ کی حفاظت لازمی ہے','Backup Safety Required Before Install')}</h3>
+    <div class="note">${t('اگر ایپ کبھی ان انسٹال ہو جائے، یا براؤزر کا ڈیٹا صاف ہو جائے، تو صرف ڈیوائس کے اندر محفوظ ڈیٹا ضائع ہو سکتا ہے۔ انسٹال جاری رکھنے سے پہلے ذیل میں سے ایک ضرور کریں — پھر انسٹال خود بخود جاری ہو جائے گا۔','If the app is ever uninstalled, or the browser\'s data is cleared, data kept only inside the device can be lost. Do one of these before continuing — install will then proceed automatically.')}</div>
+    <button class="btn block" onclick="closeModal(); connectBackupFolderThenInstall();">📁 ${t('خودکار بیک اپ فولڈر منسلک کریں (تجویز کردہ)','Connect Automatic Backup Folder (recommended)')}</button>
+    <button class="btn outline block" style="margin-top:8px;" onclick="downloadBackupThenInstall();">⬇️ ${t('ابھی ایک بیک اپ ڈاؤن لوڈ کریں','Download One Backup Now')}</button>
+    <button class="btn outline block" style="margin-top:8px;" onclick="closeModal()">${t('منسوخ','Cancel')}</button>
+  `);
+}
+async function connectBackupFolderThenInstall(){
+  if(!requireAdminRole()) return;
+  await connectBackupFolder();
+  if(hasBackupSafety()) triggerPwaInstall();
+}
+async function downloadBackupThenInstall(){
+  if(!requireAdminRole()) return;
+  await downloadBackupNow();
+  closeModal();
+  if(hasBackupSafety()) triggerPwaInstall();
+}
 async function triggerPwaInstall(){
   const statusEl = document.getElementById('pwaInstallStatus');
   const setMsg = (msg)=>{ if(statusEl) statusEl.textContent = msg; else alert(msg); };
