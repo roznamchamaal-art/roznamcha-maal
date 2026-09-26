@@ -310,8 +310,8 @@ body.dark input,body.dark select{background:#243029; color:var(--ink);}
 body.dark .settings-row{background:#20302a;}
 
 /* ============ LOCK SCREEN ============ */
-.lock-screen{position:fixed; inset:0; z-index:100; background:linear-gradient(160deg,var(--cover-green),var(--cover-green-dark)); display:flex; align-items:center; justify-content:center; padding:20px;}
-.lock-box{background:var(--paper); border-radius:18px; padding:26px 22px; width:100%; max-width:340px; box-shadow:0 10px 40px rgba(0,0,0,.4); text-align:center;}
+.lock-screen{position:fixed; inset:0; z-index:100; background:linear-gradient(160deg,var(--cover-green),var(--cover-green-dark)); display:flex; align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto;}
+.lock-box{background:var(--paper); border-radius:18px; padding:26px 22px; width:100%; max-width:340px; box-shadow:0 10px 40px rgba(0,0,0,.4); text-align:center; margin:auto; flex-shrink:0;}
 .lock-box .stamp-big{width:56px;height:56px;border-radius:50%;background:var(--gold); color:var(--cover-green-dark); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:800; margin:0 auto 12px;}
 .lock-box h3{margin:0 0 4px; color:var(--cover-green); font-family:'Fraunces',serif;}
 body.lang-ur .lock-box h3{font-family:'Noto Nastaliq Urdu'; font-size:19px;}
