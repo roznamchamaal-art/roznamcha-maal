@@ -365,6 +365,153 @@ body.dark .qa-item{background:#243029;}
 body.role-operator .admin-only{display:none !important;}
 .role-banner{display:none; background:var(--gold-light); color:var(--cover-green-dark); font-size:11.5px; padding:6px 12px; text-align:center; font-weight:700;}
 body.role-operator .role-banner{display:block;}
+
+/* =====================================================================
+   RESPONSIVE + COMPACT POLISH  (phone / tablet / laptop / desktop)
+   ===================================================================== */
+*{scrollbar-width:thin; scrollbar-color:var(--gold) transparent;}
+::-webkit-scrollbar{width:9px; height:9px;}
+::-webkit-scrollbar-thumb{background:var(--gold); border-radius:9px; border:2px solid transparent; background-clip:content-box;}
+::-webkit-scrollbar-track{background:transparent;}
+html{-webkit-text-size-adjust:100%; overflow-x:hidden;}
+body{
+  background:
+    radial-gradient(900px 420px at 100% -8%, rgba(184,134,47,.10), transparent 62%),
+    radial-gradient(700px 380px at 0% 105%, rgba(18,53,36,.07), transparent 60%),
+    var(--parchment);
+  background-attachment:fixed;
+}
+img,svg{max-width:100%;}
+
+/* ---- Urdu (Nastaliq) has very tall default line boxes: tighten everywhere ---- */
+body.lang-ur{line-height:1.75;}
+body.lang-ur header.top .brand h1{line-height:1.5;}
+body.lang-ur header.top .sub{line-height:1.7; margin-top:4px;}
+body.lang-ur .card h2,body.lang-ur .modal h3,body.lang-ur .lock-box h3{line-height:1.55;}
+body.lang-ur label{line-height:1.6;}
+body.lang-ur .btn,body.lang-ur .pill,body.lang-ur nav.bottom button,body.lang-ur .desktop-tabs button{line-height:1.5;}
+body.lang-ur input,body.lang-ur select{line-height:1.5;}
+body.lang-ur .dash-card .l,body.lang-ur .stat .l,body.lang-ur .fin-box .l{line-height:1.6;}
+
+/* ---- compact form controls ---- */
+input[type=text],input[type=number],input[type=date],input[type=tel],input[type=password],select{padding-block:8px;}
+.btn{padding:8px 16px; transition:filter .15s, transform .1s, box-shadow .15s;}
+.btn:hover{filter:brightness(1.08);}
+.btn:active{transform:scale(.98);}
+.card{border-radius:16px; padding:14px 16px; margin-bottom:12px; transition:box-shadow .2s;}
+main{padding:12px 12px 4px;}
+.modal{max-height:88vh; max-height:88dvh;}
+.app{min-height:100vh; min-height:100dvh;}
+
+/* ---- header: soft gold accent line ---- */
+header.top::after{
+  content:""; position:absolute; inset-inline:18px; bottom:0; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent); opacity:.75;
+}
+
+/* ---- dashboard / stat grids: fluid columns ---- */
+.dash-grid{grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
+.stat-grid,.fin-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;}
+.fin-box.wide{grid-column:1 / -1;}
+.dash-card{
+  position:relative; overflow:hidden; padding:12px 10px;
+  transition:transform .15s, box-shadow .15s;
+}
+.dash-card::before{
+  content:""; position:absolute; inset-inline:0; top:0; height:3px;
+  background:linear-gradient(90deg,var(--gold),var(--gold-light));
+}
+.dash-card.due::before{background:linear-gradient(90deg,var(--danger),#d88);}
+.dash-card:hover{transform:translateY(-2px); box-shadow:var(--shadow);}
+.dash-card .n{font-size:clamp(17px,1.5vw + 8px,24px); line-height:1.3; word-break:break-word;}
+.dash-card .l{margin-top:2px;}
+.stat .n{font-size:clamp(17px,1.2vw + 9px,22px);}
+.qa-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
+
+/* ---- ledger tables: zebra + hover ---- */
+table.ledger tbody tr:nth-child(even):not(.total-row):not(.carry-row):not(.day-sep) td{background:rgba(228,200,132,.12);}
+table.ledger tbody tr:hover:not(.total-row):not(.carry-row):not(.day-sep) td{background:rgba(184,134,47,.16);}
+.tbl-wrap{max-height:calc(100vh - 230px); max-height:calc(100dvh - 230px); min-height:160px; overflow:auto;}
+
+/* ---- lock / login: always fit the window, compact ---- */
+.lock-screen{padding:12px; align-items:flex-start;}
+.lock-box{padding:18px 20px; max-width:360px;}
+.lock-box .stamp-big{width:44px; height:44px; font-size:21px; margin-bottom:8px;}
+.lock-box .role-row{margin-bottom:8px;}
+.pin-dots{margin:10px 0;}
+.pin-pad{gap:6px;}
+.pin-pad button{padding:10px 0; font-size:16px;}
+.lock-input{padding:8px; font-size:20px; margin:8px 0 2px;}
+#loginScreen label{margin:6px 0 3px;}
+#loginScreen .btn.block{margin-top:8px;}
+#loginScreen #loginScreenSub{margin-bottom:6px !important; line-height:1.7;}
+#forgotLoginLink{margin-top:8px !important;}
+.lock-error{min-height:14px; margin-top:4px;}
+
+/* =========================  PHONES  ========================= */
+@media (max-width:560px){
+  main{padding:10px 8px 4px;}
+  .card{padding:12px; border-radius:14px;}
+  .app{padding-bottom:calc(74px + env(safe-area-inset-bottom,0px));}
+  nav.bottom{padding-bottom:env(safe-area-inset-bottom,0px);}
+  .head-amount-row input{width:96px;}
+}
+@media (max-width:380px){
+  .dash-card .l{font-size:10.5px;}
+  header.top{padding:12px 12px 10px;}
+  .lock-box{padding:14px 14px;}
+  .toolbar .btn{padding:6px 9px;}
+}
+
+/* ====================  TABLETS (portrait / landscape)  ==================== */
+@media (min-width:561px) and (max-width:859px){
+  .app,nav.bottom{max-width:720px;}
+  .app{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px));}
+  .dash-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+
+/* ====================  LAPTOP / DESKTOP  ==================== */
+@media (min-width:860px){
+  .app{max-width:min(96vw,1500px); padding-bottom:20px;}
+  header.top{padding:12px 20px 12px; margin:12px 14px 0;}
+  header.top .sub{margin-top:2px;}
+  .desktop-nav{margin-top:10px; padding-top:10px; gap:12px;}
+  .desktop-tabs button{padding:6px 11px;}
+  .desktop-search{width:clamp(150px,16vw,250px);}
+  main{padding:12px 14px 4px;}
+  .card{padding:16px 20px;}
+  .dash-grid{grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px;}
+  .dash-card{padding:14px 12px;}
+  .tbl-wrap{max-height:calc(100vh - 250px); max-height:calc(100dvh - 250px);}
+  /* the floating button must stay inside the window on every screen width */
+  .fab{inset-inline-end:max(20px, calc(50% - 750px + 26px)); bottom:20px; width:48px; height:48px;}
+}
+@media (min-width:1280px){
+  .dash-grid{grid-template-columns:repeat(6,minmax(0,1fr));}
+}
+
+/* ----- short laptop windows (e.g. 768px-high screens at 125-150 % scaling) ----- */
+@media (max-height:720px){
+  header.top .sub{display:none;}
+  header.top{padding-top:8px; padding-bottom:8px;}
+  .card{padding:12px 14px; margin-bottom:10px;}
+  .lock-box{padding:12px 16px;}
+  .lock-box .stamp-big{width:34px; height:34px; font-size:17px; margin-bottom:4px;}
+  .lock-box h3{margin-bottom:2px;}
+  #loginScreen #loginScreenSub{display:none;}
+  input[type=text],input[type=number],input[type=date],input[type=tel],input[type=password],select{padding-block:6px;}
+  .pin-pad button{padding:7px 0;}
+  .pin-dots{margin:6px 0;}
+}
+@media (max-height:560px){
+  .lock-screen{padding:6px;}
+  .lock-box{zoom:.9;}
+}
+@media print{
+  body{background:#fff !important;}
+  .app{max-width:none !important; zoom:1 !important;}
+  .dash-card::before,header.top::after{display:none;}
+}
 </style>
 </head>
 <body class="lang-ur">
