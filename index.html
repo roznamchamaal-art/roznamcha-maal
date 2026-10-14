@@ -5472,6 +5472,7 @@ function renderEntryModal(){
 
   showModal(`
     <h3>${t('نیا اندراج (روزنامچہ)','New Entry (Daybook)')}</h3>
+    ${entryDraft.savedMsg?`<div style="background:#e3f4e8;color:#14532d;border:1px solid #86c99a;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-weight:700;font-size:13.5px;">${entryDraft.savedMsg}</div>`:''}
     <div class="toggle-row">
       <input type="checkbox" id="entryManualToggle" ${entryDraft.manual?'checked':''} onchange="toggleManualEntry(this.checked)">
       <label for="entryManualToggle" style="margin:0;">${t('جس کا کھاتہ نہیں بنا — نام درج کریں','No account created for this person — enter name instead')}</label>
@@ -5507,6 +5508,7 @@ function renderEntryModal(){
 
     <div class="total-line"><span>${t('کل رقم','Total amount')}</span><span id="entryTotalDisplay">${entryDraft.cancelled?'-':fmtNum(total)}</span></div>
     <button class="btn block" onclick="saveEntry()">${t('محفوظ کریں','Save Entry')}</button>
+    <button class="btn outline block" style="margin-top:8px;" onclick="closeModal()">${t('اندراج مکمل — فارم بند کریں','Done — close form')}</button>
   `);
 }
 function toggleCancelledEntry(v){
@@ -5561,9 +5563,7 @@ function saveEntry(){
       amounts:{}, total:0, cancelled:true
     });
     saveDB();
-    selectedMonth = monthRes.month;
-    closeModal();
-    switchTab('roznamcha');
+    afterEntrySaved(monthRes, entryDraft.receiptNo);
     return;
   }
   if(entryDraft.manual){
@@ -5592,9 +5592,22 @@ function saveEntry(){
     receiptNo:entryDraft.receiptNo, bookNo:entryDraft.bookNo, tanzeem:entryDraft.tanzeem||'', kaifiyat:entryDraft.kaifiyat||'', muhassil:(entryDraft.muhassil||'').trim(), amounts, total, cancelled:false
   });
   saveDB();
+  afterEntrySaved(monthRes, entryDraft.receiptNo);
+}
+/* After saving: keep the entry form open for the next receipt (continuous entry).
+   Date, book no., organization and muhassil carry over; receipt no. goes +1 if numeric;
+   account, amounts and remarks are cleared. The daybook behind the form is refreshed. */
+function afterEntrySaved(monthRes, savedReceiptNo){
   selectedMonth = monthRes.month;
-  closeModal();
-  switchTab('roznamcha');
+  const prev = entryDraft;
+  const rn = String(savedReceiptNo||'').trim();
+  const nextRn = /^\d+$/.test(rn) ? String(parseInt(rn,10)+1).padStart(rn.length,'0') : '';
+  switchTab('roznamcha');            // refresh the daybook behind the form (the form stays open)
+  entryDraft = {khataId:null, manual:prev.manual, manualName:'', date:prev.date, receiptNo:nextRn, bookNo:prev.bookNo,
+    tanzeem:prev.tanzeem||'', kaifiyat:'', muhassil:prev.muhassil||'', cancelled:false, amounts:{},
+    savedMsg: t('✔ رسید محفوظ ہو گئی'+(rn?' (#'+rn+')':'')+' — اگلی رسید درج کریں','✔ Receipt saved'+(rn?' (#'+rn+')':'')+' — enter the next one')};
+  renderEntryModal();
+  setTimeout(()=>{ const f = document.getElementById('entryKhataSearch') || document.getElementById('entryManualName'); if(f) f.focus(); }, 60);
 }
 /* ============ SINGLE RECEIPT (نکالی ہوئی رسید) — nice printable/PDF slip for one receipt ============ */
 function printSingleReceipt(id){
