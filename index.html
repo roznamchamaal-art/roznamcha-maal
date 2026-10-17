@@ -562,6 +562,62 @@ table.ledger tbody tr:hover:not(.total-row):not(.carry-row):not(.day-sep) td{bac
   .app{max-width:none !important; zoom:1 !important;}
   .dash-card::before,header.top::after{display:none;}
 }
+
+/* ---- compact account detail + summary pages ---- */
+.k-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:2px;}
+.k-head .khata-num{width:28px; height:28px; font-size:12px;}
+.k-head .k-name{font-size:16px; font-weight:700; color:var(--cover-green); line-height:1.7;}
+body.lang-ur .k-head .k-name{font-family:'Noto Nastaliq Urdu'; font-size:17px; line-height:2;}
+.k-head .badge{background:var(--gold-light); color:var(--cover-green-dark); font-size:11px; padding:1px 9px; border-radius:999px; font-weight:700;}
+.k-head .k-back{margin-inline-start:auto; padding:4px 12px; border-radius:999px; font-size:12px;}
+.k-meta{font-size:12px; color:var(--ink-soft); line-height:1.8; margin-bottom:6px; display:flex; gap:4px 14px; flex-wrap:wrap;}
+.k-meta b{color:var(--ink);}
+.k-tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:6px; margin:6px 0 10px;}
+.k-tile{background:linear-gradient(180deg,#fffdf6,var(--paper)); border:1px solid var(--rule); border-top:3px solid var(--gold); border-radius:10px; padding:4px 8px; text-align:center; min-width:0;}
+.k-tile .n{font-size:14.5px; font-weight:800; color:var(--cover-green); font-family:'Inter',sans-serif; line-height:1.4;}
+.k-tile .l{font-size:10.5px; color:var(--ink-soft); line-height:1.6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.k-tile.main{border-top-color:var(--cover-green);}
+.k-tile.due{border-top-color:var(--danger);}
+.k-tile.due .n{color:var(--danger);}
+.chip-row{display:flex; flex-wrap:wrap; gap:6px;}
+.chip-row .btn{flex:none; margin:0; padding:4px 11px; font-size:12px; border-radius:999px; line-height:1.7;}
+.chip-row .btn.outline:hover{background:var(--gold-light);}
+.sum-top h2{font-size:15px !important;}
+body.lang-ur .sum-top h2{font-size:16.5px !important;}
+.sum-tiles{grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:6px; margin:2px 0 8px;}
+.sum-tile{padding:4px 8px; border-radius:10px;}
+.sum-tile .n{font-size:14.5px; line-height:1.35;}
+.sum-tile .l{font-size:10.5px; line-height:1.6;}
+.trend-row{margin-bottom:3px; max-width:680px;}
+.trend-row .bar{height:7px;}
+body.lang-ur .trend-row .m{line-height:1.7;}
+.head-sum-wrap{max-width:520px;}
+table.head-sum td{padding:4px 10px;}
+table.head-sum th{padding:4px 10px;}
+table.head-sum .mini{height:3px; margin-top:2px;}
+.khata-detail-card .toolbar{margin-bottom:6px;}
+.khata-detail-card .toolbar .btn{padding:4px 11px; border-radius:999px;}
+
+/* ---- compact Local Kharch ---- */
+.lk-head{display:flex; align-items:center; gap:4px 14px; flex-wrap:wrap; padding-block:7px !important;}
+.lk-head h2{margin:0 !important; font-size:15px;}
+body.lang-ur .lk-head h2{font-size:16.5px;}
+.lk-head .pill-row{margin:0 !important; padding:0 !important; margin-inline-start:auto !important;}
+.lk-head .pill,.lk-wrap .pill{padding:3px 12px; font-size:12px; line-height:1.7;}
+.lk-wrap .card{padding-block:10px;}
+.lk-open{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;}
+.lk-open label{margin:0; font-size:12px; line-height:1.7;}
+.lk-open input{width:130px; padding:3px 8px !important; font-size:13px; border-radius:8px;}
+.lk-months{margin:0 0 6px !important; padding-bottom:2px !important;}
+.lk-wrap .toolbar{margin-bottom:4px; gap:6px;}
+.lk-wrap .toolbar .btn{padding:3px 11px; border-radius:999px; line-height:1.7;}
+.lk-sec{font-weight:700; color:var(--cover-green); font-size:13px; margin:8px 0 4px; display:flex; align-items:center; gap:6px; line-height:1.7;}
+.lk-sec::before{content:""; width:4px; height:14px; border-radius:2px; background:var(--gold); flex:none;}
+.lk-wrap table.ledger th,.lk-wrap table.ledger td{padding:3px 7px; line-height:1.6;}
+.lk-wrap .tbl-wrap{min-height:0; border-radius:10px;}
+.lk-wrap .empty{padding:8px; font-size:12.5px;}
+.lk-wrap .row-del{padding:0 3px; font-size:14px;}
+.lk-wrap .k-tiles{margin:4px 0 6px; max-width:760px;}
 </style>
 </head>
 <body class="lang-ur">
@@ -3274,16 +3330,24 @@ function renderKhataDetail(id){
   }).join('');
 
   return `
-    <div class="card">
-      <button class="btn outline sm" onclick="selectedKhataId=null; render();">${LANG==='ur'?'› واپس':'‹ Back'}</button>
-      <h2 style="margin-top:12px;"><span class="khata-num" style="display:inline-flex;">${k.number}</span> ${kEsc(LANG==='ur'?k.name_ur:k.name_en)} <span class="badge" style="background:var(--gold-light);color:var(--cover-green-dark);">${k.year||DB.fiscalYear}</span></h2>
-      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">${kEsc(LANG==='ur'?(k.rel_ur||''):(k.rel_en||''))} ${k.area?(' · '+k.area):''}</div>
-      ${k.wasiyatNo ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">${t('وصیت نمبر','Wasiyat No.')}: <b style="color:var(--ink);">${kEsc(k.wasiyatNo)}</b></div>` : ''}
-
-      <div class="fin-grid">
-        <div class="fin-box"><div class="l">${t('سابقہ بقایا','Previous balance')}</div><div class="n">${fmtNum(prevBalance)}</div></div>
-        <div class="fin-box"><div class="l">${t('بجٹ سال رواں','Current year budget')}</div><div class="n">${fmtNum(budgetYear)}</div></div>
-        <div class="fin-box wide"><div class="l">${t('کل میزان (سابقہ بقایا + بجٹ)','Grand total (previous + budget)')}</div><div class="n">${fmtNum(grandTotal)}</div></div>
+    <div class="card khata-detail-card">
+      <div class="k-head">
+        <span class="khata-num">${k.number}</span>
+        <span class="k-name">${kEsc(LANG==='ur'?k.name_ur:k.name_en)}</span>
+        <span class="badge">${k.year||DB.fiscalYear}</span>
+        <button class="btn outline sm k-back" onclick="selectedKhataId=null; render();">${LANG==='ur'?'› واپس':'‹ Back'}</button>
+      </div>
+      <div class="k-meta">
+        <span>${kEsc(LANG==='ur'?(k.rel_ur||''):(k.rel_en||''))}${k.area?(' · '+k.area):''}</span>
+        ${k.wasiyatNo ? `<span>${t('وصیت نمبر','Wasiyat No.')}: <b>${kEsc(k.wasiyatNo)}</b></span>` : ''}
+      </div>
+      <div class="k-tiles">
+        <div class="k-tile"><div class="n">${fmtNum(prevBalance)}</div><div class="l">${t('سابقہ بقایا','Previous balance')}</div></div>
+        <div class="k-tile"><div class="n">${fmtNum(budgetYear)}</div><div class="l">${t('بجٹ سال رواں','Year budget')}</div></div>
+        <div class="k-tile main" title="${t('سابقہ بقایا + بجٹ','Previous + budget')}"><div class="n">${fmtNum(grandTotal)}</div><div class="l">${t('کل میزان','Grand total')}</div></div>
+        <div class="k-tile" title="${t('میزان — وصول شدہ (تفصیل)','Total received (detail)')}"><div class="n">${fmtNum(detailTotal)}</div><div class="l">${t('وصول شدہ','Received')}</div></div>
+        <div class="k-tile"><div class="n">${entries.length}</div><div class="l">${t('کل اندراجات','Entries')}</div></div>
+        <div class="k-tile ${baqaya>0?'due':''}" title="${t('کل میزان − تفصیل کا میزان','Grand total − detail total')}"><div class="n">${fmtNum(baqaya)}</div><div class="l">${t('بقایا','Balance due')}</div></div>
       </div>
       ${(byHeadListHtml(k.prevBalanceByHead) || byHeadListHtml(k.budgetByHead)) ? `
       <div style="margin:10px 0;">
@@ -3292,13 +3356,6 @@ function renderKhataDetail(id){
       </div>` : ''}
       ${k.incomeSource ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;">${t('ذریعہ آمد','Income Source')}: <b style="color:var(--ink);">${k.incomeSource}</b></div>` : ''}
 
-      <div class="stat-grid">
-        <div class="stat"><div class="n">${fmtNum(detailTotal)}</div><div class="l">${t('میزان — وصول شدہ (تفصیل)','Total received (detail)')}</div></div>
-        <div class="stat"><div class="n">${entries.length}</div><div class="l">${t('کل اندراجات','Total entries')}</div></div>
-      </div>
-      <div class="fin-grid">
-        <div class="fin-box wide ${baqaya>0?'due':''}"><div class="l">${t('بقایا (کل میزان − تفصیل کا میزان)','Balance due (grand total − detail total)')}</div><div class="n">${fmtNum(baqaya)}</div></div>
-      </div>
       ${khataByHeadDueHtml(k, entries)}
 
       <div class="toolbar">
@@ -4203,17 +4260,13 @@ function renderSummary(){
   const tile = (cls, n, l)=>`<div class="sum-tile ${cls}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
   return `
     <div class="card">
-      <div class="btn-row" style="flex-wrap:wrap;">
+      <div class="chip-row">
         <button class="btn outline sm" onclick="openNamewiseModal()">📋 ${t('اسم وار تفصیل لسٹ','Name-wise Detail List')}</button>
         <button class="btn outline sm" onclick="openDefaultersModal()">📋 ${t('فہرست بقایادار','Defaulters List')}</button>
-      </div>
-      <div class="btn-row" style="flex-wrap:wrap;">
         <button class="btn outline sm" onclick="openBudgetMembersModal()">👥 ${t('بجٹ لازمی چندہ جات شاملین','Budget-Mandatory Chanda Members')}</button>
         <button class="btn outline sm" onclick="openTanzeemDetailModal()">📋 ${t('تنظیم وائز تفصیل لسٹ','Organization-wise Detail List')}</button>
-      </div>
-      <div class="btn-row admin-only" style="flex-wrap:wrap;">
-        <button class="btn outline sm" onclick="openYearClosingModal()">📅 ${t('سالانہ کلوزنگ / نیا سال','Annual Closing / New Year')}</button>
-        <button class="btn outline sm" onclick="openPreviousYearsModal()">🗂 ${t('پچھلے سال','Previous Years')}</button>
+        <button class="btn outline sm admin-only" onclick="openYearClosingModal()">📅 ${t('سالانہ کلوزنگ / نیا سال','Annual Closing / New Year')}</button>
+        <button class="btn outline sm admin-only" onclick="openPreviousYearsModal()">🗂 ${t('پچھلے سال','Previous Years')}</button>
       </div>
     </div>
     <div class="card">
@@ -5187,7 +5240,7 @@ function renderLocalKharch(){
   else if(LOCAL_SUBTAB==='income') body = renderIncomeEntries();
   else if(LOCAL_SUBTAB==='incomeheads') body = renderIncomeHeadsManage();
   else body = renderCashBook();
-  return `<div class="card"><h2>${t('لوکل خرچ','Local Kharch')} <span class="badge">${t('کیش بک و اخراجات','Cash Book & Expenses')}</span></h2>${subtabs}</div>${body}`;
+  return `<div class="card lk-head"><h2>${t('لوکل خرچ','Local Kharch')}</h2>${subtabs}</div><div class="lk-wrap">${body}</div>`;
 }
 
 
@@ -5244,9 +5297,11 @@ function renderCashBook(){
 
   return `
     <div class="card">
-      <label>${t('ابتدائی کیش بیلنس (Opening Cash Balance) — صفر سے شروع','Opening Cash Balance — starts from zero')}</label>
-      <input type="number" value="${DB.cashOpeningBalance||0}" onchange="setCashOpeningBalance(this.value)">
-      <div class="pill-row" style="margin-top:10px;">${pills}<button class="pill" onclick="openAddLocalMonthModal()">+ ${t('ماہ شامل کریں','Add Month')}</button></div>
+      <div class="lk-open" title="${t('صفر سے شروع','Starts from zero')}">
+        <label>${t('ابتدائی کیش بیلنس','Opening Cash Balance')}</label>
+        <input type="number" value="${DB.cashOpeningBalance||0}" onchange="setCashOpeningBalance(this.value)">
+      </div>
+      <div class="pill-row lk-months">${pills}<button class="pill" onclick="openAddLocalMonthModal()">+ ${t('ماہ شامل کریں','Add Month')}</button></div>
       ${isLocalMonthClosed(localSelectedMonth) ? `<div class="note" style="background:var(--gold-light);color:var(--cover-green-dark);font-weight:700;">🔒 ${t('یہ ماہ بند ہے — نئے خرچ یا حذف کے لیے پہلے دوبارہ کھولیں۔','This month is closed — reopen it first to add or delete expenses.')}</div>` : ''}
       <div class="toolbar">
         <button class="btn outline sm" onclick="openIncomeModal()">+ ${t('آمد درج کریں','Add Income')}</button>
@@ -5255,16 +5310,16 @@ function renderCashBook(){
         <button class="btn outline sm" onclick="shareCashBook()">📤 ${t('شیئر','Share')}</button>
         <button class="btn ${isLocalMonthClosed(localSelectedMonth)?'gold':'outline'} sm admin-only" onclick="toggleLocalMonthClosed('${localSelectedMonth}')">${isLocalMonthClosed(localSelectedMonth) ? '🔓 '+t('ماہ دوبارہ کھولیں','Reopen Month') : '🔒 '+t('ماہ بند کریں','Close Month')}</button>
       </div>
-      <div style="font-weight:700;color:var(--cover-green);margin-bottom:6px;font-size:13.5px;">${t('ماہانہ آمد (شفٹ شدہ + مدوار آمد)','Monthly income (shifted + category income)')}</div>
-      ${incomeHtml}
-      <div style="font-weight:700;color:var(--cover-green);margin:14px 0 6px;font-size:13.5px;">${t('ماہانہ اخراجات','Monthly expenses')}</div>
-      ${expenseHtml}
-      <div class="fin-grid" style="margin-top:14px;">
-        <div class="fin-box"><div class="l">${t('ابتدائی بیلنس (اس ماہ کے آغاز پر)','Opening balance (start of month)')}</div><div class="n">${fmtNum(openingForMonth)}</div></div>
-        <div class="fin-box"><div class="l">${t('کل آمد','Total income')}</div><div class="n">${fmtNum(totalIncome)}</div></div>
-        <div class="fin-box"><div class="l">${t('کل خرچ','Total expense')}</div><div class="n">${fmtNum(totalExpense)}</div></div>
-        <div class="fin-box wide ${balance<0?'due':''}"><div class="l">${t('اختتامی بیلنس (کیش بیلنس)','Closing balance (cash on hand)')}</div><div class="n">${fmtNum(balance)}</div></div>
+      <div class="k-tiles">
+        <div class="k-tile"><div class="n">${fmtNum(openingForMonth)}</div><div class="l">${t('ابتدائی بیلنس','Opening balance')}</div></div>
+        <div class="k-tile"><div class="n">${fmtNum(totalIncome)}</div><div class="l">${t('کل آمد','Total income')}</div></div>
+        <div class="k-tile"><div class="n">${fmtNum(totalExpense)}</div><div class="l">${t('کل خرچ','Total expense')}</div></div>
+        <div class="k-tile main ${balance<0?'due':''}"><div class="n">${fmtNum(balance)}</div><div class="l">${t('اختتامی بیلنس','Closing balance')}</div></div>
       </div>
+      <div class="lk-sec">${t('ماہانہ آمد (شفٹ شدہ + مدوار آمد)','Monthly income (shifted + category income)')}</div>
+      ${incomeHtml}
+      <div class="lk-sec">${t('ماہانہ اخراجات','Monthly expenses')}</div>
+      ${expenseHtml}
     </div>`;
 }
 const LOCAL_LIST_PAGE_SIZE = 100; // rows per page for cash-book / expense-entries tables
