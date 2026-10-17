@@ -2827,7 +2827,7 @@ function renderDashboard(){
         <div class="dash-card due"><div class="n">${fmtNum(totalBaqaya)}</div><div class="l">${t('بقایا جات','Outstanding dues')}</div></div>
         <div class="dash-card"><div class="n">${fmtNum(monthExpense)}</div><div class="l">${t('لوکل خرچ (اس ماہ)','Local kharch (this month)')}</div></div>
         <div class="dash-card"><div class="n">${fmtNum(cashOnHand)}</div><div class="l">${t('نقد بیلنس','Cash on hand')}</div></div>
-        <div class="dash-card wide" role="button" tabindex="0" style="cursor:pointer;" onclick="openMuhassilBookModal()" onkeydown="if(event.key==='Enter') openMuhassilBookModal()"><div class="n">📚 ${muhassilBookCount()}</div><div class="l">${t('محاصل بک ٹوٹل — کتاب وار رسیدوں کا ٹوٹل (کلک کریں)','Muhassil Book Total — receipts total per book (tap to open)')}</div></div>
+        <div class="dash-card wide" role="button" tabindex="0" style="cursor:pointer;" onclick="openMuhassilBookModal()" onkeydown="if(event.key==='Enter') openMuhassilBookModal()"><div class="n">📚 ${muhassilBookCount()}</div><div class="l">${t('محاصل بک ٹوٹل','Muhassil Book Total')}</div></div>
       </div>
       <div class="toolbar">
         <button class="btn outline sm" onclick="openEntryModal()">+ ${t('نئی رسید','New Receipt')}</button>
@@ -2874,12 +2874,12 @@ function muhassilBookRows(monthFilter, nameFilter){
   }).sort((a,b)=> a.month<b.month ? -1 : a.month>b.month ? 1 : natCmp(a.book,b.book));
 }
 function muhassilBookCount(){ return new Set(DB.entries.map(e=>String(e.bookNo||'').trim()).filter(Boolean)).size; }
-function muhassilRangeText(r){ return !r.from ? '-' : (r.from===r.to ? r.from : (LANG==='ur' ? `از ${r.from} تا ${r.to}` : `${r.from} – ${r.to}`)); }
+function muhassilRangeText(r){ return !r.from ? '-' : (r.from===r.to ? r.from : (LANG==='ur' ? `${r.from} تا ${r.to}` : `${r.from} – ${r.to}`)); }
 function muhassilTableHtml(rows, forPrint){
   const open = forPrint ? '<table>' : '<div class="tbl-wrap"><table class="ledger">';
   const close = forPrint ? '</table>' : '</table></div>';
   const total = rows.reduce((a,r)=>a+r.total,0);
-  return `${open}<thead><tr><th>#</th><th>${t('کتاب نمبر','Book No.')}</th><th>${t('رسید نمبر (از – تا)','Receipt No. (from – to)')}</th><th>${t('نام محاصل','Muhassil')}</th><th>${t('ٹوٹل','Total')}</th><th>${t('ماہ','Month')}</th></tr></thead>
+  return `${open}<thead><tr><th>#</th><th>${t('کتاب نمبر','Book No.')}</th><th>${t('رسید نمبر','Receipt No.')}</th><th>${t('نام محاصل','Muhassil')}</th><th>${t('ٹوٹل','Total')}</th><th>${t('ماہ','Month')}</th></tr></thead>
     <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${kEsc(r.book||'-')}</td><td>${kEsc(muhassilRangeText(r))}<div style="font-size:10.5px;color:var(--ink-soft);">${r.count} ${t('رسیدیں','receipts')}${r.cancelled?` · ${r.cancelled} ${t('کینسل','cancelled')}`:''}</div></td><td style="white-space:normal;">${r.names.length?r.names.map(kEsc).join('، '):'—'}</td><td><b>${fmtNum(r.total)}</b></td><td>${monthLabel(r.month,LANG)}</td></tr>`).join('')}
     <tr class="total-row"><td colspan="4">${t('میزان','Total')}</td><td>${fmtNum(total)}</td><td></td></tr></tbody>${close}`;
 }
@@ -5190,6 +5190,12 @@ function renderLocalKharch(){
   return `<div class="card"><h2>${t('لوکل خرچ','Local Kharch')} <span class="badge">${t('کیش بک و اخراجات','Cash Book & Expenses')}</span></h2>${subtabs}</div>${body}`;
 }
 
+
+/* ---- row action buttons (edit + delete) for Local Kharch income / expense rows ---- */
+function localRowActions(editFn, delFn, id){
+  return `<button class="row-del" style="color:var(--cover-green);" title="${t('ترمیم','Edit')}" onclick="${editFn}('${id}')">✏️</button><button class="row-del" title="${t('حذف کریں','Delete')}" onclick="${delFn}('${id}')">🗑</button>`;
+}
+
 /* ---- Cash Book ---- */
 function cashBookIncomeRows(month){
   const shifted = (DB.monthShifts && DB.monthShifts[month]) || [];
@@ -5197,12 +5203,12 @@ function cashBookIncomeRows(month){
   const shiftedRows = shifted.map(hid=>{
     const h = DB.heads.find(x=>x.id===hid);
     const amount = monthEntries.reduce((a,e)=>a+(e.amounts[hid]||0),0);
-    return {detail: h?(LANG==='ur'?h.ur:h.en):hid, amount, source:'shift'};
+    const lbl = h?(LANG==='ur'?h.ur:h.en):hid; return {detail: lbl, date:'', head:lbl, text:t('روزنامچہ سے شفٹ','shifted from Daybook'), amount, source:'shift'};
   }).filter(r=>r.amount>0);
   const directRows = DB.incomeEntries.filter(e=>e.month===month).map(e=>{
     const h = DB.incomeHeads.find(x=>x.id===e.headId);
     const label = h?(LANG==='ur'?h.ur:h.en):'-';
-    return {detail: e.detail ? `${label} — ${e.detail}` : label, amount: e.amount, source:'direct', id:e.id};
+    return {detail: e.detail ? `${label} — ${e.detail}` : label, date:e.date, head:label, text:e.detail||'', amount: e.amount, source:'direct', id:e.id};
   });
   return [...shiftedRows, ...directRows];
 }
@@ -5223,17 +5229,17 @@ function renderCashBook(){
   const openingForMonth = monthsBefore.length ? cashRunningBalance(monthsBefore[monthsBefore.length-1]) : (parseFloat(DB.cashOpeningBalance)||0);
   const balance = openingForMonth + totalIncome - totalExpense;
 
-  const incomeHtml = incomeRows.length ? `<div class="tbl-wrap"><table class="ledger"><thead><tr><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr></thead>
-    <tbody>${incomeRows.map(r=>`<tr><td style="text-align:${LANG==='ur'?'right':'left'}">${r.detail} <span style="font-size:10px;color:var(--ink-soft);">(${r.source==='shift'?t('روزنامچہ سے شفٹ','shifted from Daybook'):t('مدوار آمد','category income')})</span></td><td>${fmtNum(r.amount)}</td></tr>`).join('')}
-    <tr class="total-row"><td>${t('کل آمد','Total income')}</td><td>${fmtNum(totalIncome)}</td></tr></tbody></table></div>`
+  const incomeHtml = incomeRows.length ? `<div class="tbl-wrap"><table class="ledger"><thead><tr><th>${t('تاریخ','Date')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th><th></th></tr></thead>
+    <tbody>${incomeRows.map(r=>`<tr><td>${r.date||'-'}</td><td>${r.head}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${r.text||'-'}</td><td>${fmtNum(r.amount)}</td><td>${r.source==='direct'?localRowActions('editIncome','deleteIncome',r.id):''}</td></tr>`).join('')}
+    <tr class="total-row"><td colspan="3">${t('کل آمد','Total income')}</td><td>${fmtNum(totalIncome)}</td><td></td></tr></tbody></table></div>`
     : `<div class="empty">${t('اس ماہ کوئی آمد درج نہیں','No income recorded this month')}</div>`;
 
   const expensePageInfo = paginateSlice(expenseRows, cashBookExpensePage, LOCAL_LIST_PAGE_SIZE);
   cashBookExpensePage = expensePageInfo.page;
   const expensePagerHtml = paginationBarHtml(expensePageInfo.page, expensePageInfo.totalPages, expenseRows.length, t('اندراجات','entries'), 'changeCashBookExpensePage(-1)', 'changeCashBookExpensePage(1)');
-  const expenseHtml = expenseRows.length ? `${expensePagerHtml}<div class="tbl-wrap"><table class="ledger"><thead><tr><th>#</th><th>${t('تاریخ','Date')}</th><th>${t('بل نمبر','Bill No.')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr></thead>
-    <tbody>${expensePageInfo.items.map((e,i)=>{const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${(expensePageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${e.lateEntry?` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>`:''}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td></tr>`;}).join('')}
-    <tr class="total-row"><td colspan="5">${t('کل خرچ (تمام صفحات)','Total expense (all pages)')}</td><td>${fmtNum(totalExpense)}</td></tr></tbody></table></div>${expensePagerHtml}`
+  const expenseHtml = expenseRows.length ? `${expensePagerHtml}<div class="tbl-wrap"><table class="ledger"><thead><tr><th>#</th><th>${t('تاریخ','Date')}</th><th>${t('بل نمبر','Bill No.')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th><th></th></tr></thead>
+    <tbody>${expensePageInfo.items.map((e,i)=>{const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${(expensePageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${e.lateEntry?` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>`:''}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td><td>${localRowActions('editExpense','deleteExpense',e.id)}</td></tr>`;}).join('')}
+    <tr class="total-row"><td colspan="5">${t('کل خرچ (تمام صفحات)','Total expense (all pages)')}</td><td>${fmtNum(totalExpense)}</td><td></td></tr></tbody></table></div>${expensePagerHtml}`
     : `<div class="empty">${t('اس ماہ کوئی خرچ درج نہیں','No expenses recorded this month')}</div>`;
 
   return `
@@ -5271,6 +5277,8 @@ function changeExpenseEntriesPage(delta){ expenseEntriesPage += delta; render();
 function changeIncomeEntriesPage(delta){ incomeEntriesPage += delta; render(); }
 function resolveIncomeMonth(dateStr){ return resolveExpenseMonth(dateStr); } // same Local Kharch month/closed-month rules apply to income
 function cashBookMonthHtml(month){
+  /* Side-by-side cash book print. آمد: تاریخ، مد، تفصیل، رقم | line | خرچ: تاریخ، بل نمبر، مد، تفصیل، رقم.
+     Under the آمد side: ابتدائی بیلنس (اس ماہ کے آغاز پر) -> کل آمد -> خرچ -> بقایا بیلنس. */
   const incomeRows = cashBookIncomeRows(month);
   const totalIncome = incomeRows.reduce((a,r)=>a+r.amount,0);
   const expenseRows = DB.expenses.filter(e=>e.month===month).sort((a,b)=>a.date.localeCompare(b.date));
@@ -5278,14 +5286,35 @@ function cashBookMonthHtml(month){
   const monthsBefore = localAllMonths().filter(m=>m<month);
   const openingForMonth = monthsBefore.length ? cashRunningBalance(monthsBefore[monthsBefore.length-1]) : (parseFloat(DB.cashOpeningBalance)||0);
   const balance = openingForMonth + totalIncome - totalExpense;
-  return `
-    <h3 style="font-size:14px;">${t('آمد','Income')}</h3>
-    <table><thead><tr><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr></thead>
-    <tbody>${incomeRows.map(r=>`<tr><td>${r.detail}</td><td>${fmtNum(r.amount)}</td></tr>`).join('')}<tr class="total-row"><td>${t('کل آمد','Total income')}</td><td>${fmtNum(totalIncome)}</td></tr></tbody></table>
-    <h3 style="font-size:14px;">${t('اخراجات','Expenses')}</h3>
-    <table><thead><tr><th>#</th><th>${t('تاریخ','Date')}</th><th>${t('بل نمبر','Bill No.')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr></thead>
-    <tbody>${expenseRows.map((e,i)=>{const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${i+1}</td><td>${e.date}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td>${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td></tr>`;}).join('')}<tr class="total-row"><td colspan="5">${t('کل خرچ','Total expense')}</td><td>${fmtNum(totalExpense)}</td></tr></tbody></table>
-    <div class="fin"><div>${t('ابتدائی بیلنس','Opening balance')}<b>${fmtNum(openingForMonth)}</b></div><div>${t('کل آمد','Total income')}<b>${fmtNum(totalIncome)}</b></div><div>${t('کل خرچ','Total expense')}<b>${fmtNum(totalExpense)}</b></div><div>${t('اختتامی بیلنس','Closing balance')}<b>${fmtNum(balance)}</b></div></div>`;
+  const gapTh = '<th style="width:3px;min-width:3px;padding:0;background:#000;border:none;"></th>';
+  const gapTd = '<td style="width:3px;min-width:3px;padding:0;background:#000;border:none;"></td>';
+  const al = LANG==='ur' ? 'right' : 'left';
+  const n = Math.max(incomeRows.length, expenseRows.length, 1);
+  const blankInc = '<td>&nbsp;</td><td></td><td></td><td></td>';
+  const blankExp = '<td></td><td></td><td></td><td></td><td></td>';
+  let body = '';
+  for(let i=0;i<n;i++){
+    const r = incomeRows[i];
+    const e = expenseRows[i];
+    const incCells = r ? `<td>${r.date||'-'}</td><td>${r.head}</td><td style="text-align:${al}">${r.text||'-'}</td><td>${fmtNum(r.amount)}</td>` : blankInc;
+    let expCells = blankExp;
+    if(e){
+      const h = DB.expenseHeads.find(x=>x.id===e.headId);
+      expCells = `<td>${e.date}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="text-align:${al}">${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td>`;
+    }
+    body += `<tr>${incCells}${gapTd}${expCells}</tr>`;
+  }
+  const sumRow = (label, val) => `<tr class="total-row"><td colspan="3" style="text-align:${al};font-weight:700;">${label}</td><td><b>${fmtNum(val)}</b></td>${gapTd}${blankExp}</tr>`;
+  body += sumRow(t('ابتدائی بیلنس (اس ماہ کے آغاز پر)','Opening balance (start of month)'), openingForMonth);
+  body += sumRow(t('کل آمد','Total income'), totalIncome);
+  body += sumRow(t('خرچ','Expense'), totalExpense);
+  body += sumRow(t('بقایا بیلنس','Remaining balance'), balance);
+  return `<table>
+    <thead>
+      <tr><th colspan="4">${t('آمد','Income')}</th>${gapTh}<th colspan="5">${t('خرچ','Expense')}</th></tr>
+      <tr><th>${t('تاریخ','Date')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th>${gapTh}<th>${t('تاریخ','Date')}</th><th>${t('بل نمبر','Bill No.')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr>
+    </thead>
+    <tbody>${body}</tbody></table>`;
 }
 function printCashBook(){
   printReport(t('کیش بک','Cash Book')+' — '+monthLabel(localSelectedMonth,LANG), cashBookMonthHtml(localSelectedMonth));
@@ -5305,21 +5334,30 @@ function shareCashBook(){
   text += `${t('کل خرچ','Total expense')}: ${fmtNum(totalExpense)}\n\n${t('اختتامی بیلنس','Closing balance')}: ${fmtNum(openingForMonth+totalIncome-totalExpense)}`;
   shareReport(t('کیش بک','Cash Book')+' — '+monthLabel(localSelectedMonth,LANG), text);
 }
-function openIncomeModal(){
-  incomeDraft = {date:todayStr(), headId: (DB.incomeHeads&&DB.incomeHeads[0])?DB.incomeHeads[0].id:'', detail:'', amount:''};
-  const headOptions = (DB.incomeHeads||[]).map(h=>`<option value="${h.id}">${LANG==='ur'?h.ur:h.en}</option>`).join('');
+function openIncomeModal(editId){
+  const inc = editId ? DB.incomeEntries.find(x=>x.id===editId) : null;
+  incomeDraft = inc
+    ? {date:inc.date, headId:inc.headId, detail:inc.detail||'', amount:String(inc.amount), editId:inc.id}
+    : {date:todayStr(), headId: (DB.incomeHeads&&DB.incomeHeads[0])?DB.incomeHeads[0].id:'', detail:'', amount:'', editId:null};
+  const headOptions = (DB.incomeHeads||[]).map(h=>`<option value="${h.id}" ${h.id===incomeDraft.headId?'selected':''}>${LANG==='ur'?h.ur:h.en}</option>`).join('');
   showModal(`
-    <h3>${t('نئی آمد درج کریں','New Income Entry')}</h3>
+    <h3>${inc ? t('آمد میں ترمیم کریں','Edit Income Entry') : t('نئی آمد درج کریں','New Income Entry')}</h3>
     <label>${t('تاریخ','Date')}</label>
     <input type="date" id="incDate" value="${incomeDraft.date}" onchange="incomeDraft.date=this.value">
     <label>${t('مدوار آمد (کیٹیگری)','Income Category')}</label>
     <select id="incHead" onchange="incomeDraft.headId=this.value">${headOptions}</select>
     <label>${t('تفصیل','Detail')}</label>
-    <input type="text" id="incDetail" onchange="incomeDraft.detail=this.value">
+    <input type="text" id="incDetail" value="${kEsc(incomeDraft.detail)}" onchange="incomeDraft.detail=this.value">
     <label>${t('رقم','Amount')}</label>
-    <input type="number" min="0" id="incAmount" onchange="incomeDraft.amount=this.value">
+    <input type="number" min="0" id="incAmount" value="${incomeDraft.amount}" onchange="incomeDraft.amount=this.value">
     <button class="btn block" onclick="saveIncome()">${t('محفوظ کریں','Save')}</button>
   `);
+}
+function editIncome(id){
+  const inc0 = DB.incomeEntries.find(x=>x.id===id);
+  if(!inc0) return;
+  if(isLocalMonthClosed(inc0.month)){ alert(t('یہ ماہ بند ہے — پہلے ماہ دوبارہ کھولیں۔','This month is closed — reopen it first.')); return; }
+  requireEditPin(()=>openIncomeModal(id));
 }
 function saveIncome(){
   const amount = parseFloat(incomeDraft.amount);
@@ -5334,7 +5372,12 @@ function saveIncome(){
     ));
     if(!ok) return;
   }
-  DB.incomeEntries.push({id:uid('inc'), date:incomeDraft.date, month:monthRes.month, originalMonth:toMonth(incomeDraft.date), lateEntry:monthRes.lateEntry, headId:incomeDraft.headId, detail:incomeDraft.detail, amount});
+  const incOld = incomeDraft.editId ? DB.incomeEntries.find(x=>x.id===incomeDraft.editId) : null;
+  if(incOld){
+    Object.assign(incOld, {date:incomeDraft.date, month:monthRes.month, originalMonth:toMonth(incomeDraft.date), lateEntry:monthRes.lateEntry, headId:incomeDraft.headId, detail:incomeDraft.detail, amount});
+  } else {
+    DB.incomeEntries.push({id:uid('inc'), date:incomeDraft.date, month:monthRes.month, originalMonth:toMonth(incomeDraft.date), lateEntry:monthRes.lateEntry, headId:incomeDraft.headId, detail:incomeDraft.detail, amount});
+  }
   saveDB(); localSelectedMonth = monthRes.month; closeModal(); render();
 }
 function deleteIncome(id){
@@ -5364,7 +5407,7 @@ function renderIncomeEntries(){
   const rows = incEntriesPageInfo.items.map((e,i)=>{
     const h = DB.incomeHeads.find(x=>x.id===e.headId);
     const lateBadge = e.lateEntry ? ` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>` : '';
-    return `<tr><td>${(incEntriesPageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${lateBadge}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td><b>${fmtNum(e.amount)}</b></td><td><button class="row-del" title="${t('حذف کریں','Delete')}" onclick="deleteIncome('${e.id}')">🗑</button></td></tr>`;
+    return `<tr><td>${(incEntriesPageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${lateBadge}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td><b>${fmtNum(e.amount)}</b></td><td>${localRowActions('editIncome','deleteIncome',e.id)}</td></tr>`;
   }).join('');
   const total = monthIncome.reduce((a,e)=>a+e.amount,0);
 
@@ -5461,7 +5504,7 @@ function renderExpenseEntries(){
   const rows = expEntriesPageInfo.items.map((e,i)=>{
     const h = DB.expenseHeads.find(x=>x.id===e.headId);
     const lateBadge = e.lateEntry ? ` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>` : '';
-    return `<tr><td>${(expEntriesPageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${lateBadge}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td><b>${fmtNum(e.amount)}</b></td><td><button class="row-del" title="${t('حذف کریں','Delete')}" onclick="deleteExpense('${e.id}')">🗑</button></td></tr>`;
+    return `<tr><td>${(expEntriesPageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${lateBadge}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td><b>${fmtNum(e.amount)}</b></td><td>${localRowActions('editExpense','deleteExpense',e.id)}</td></tr>`;
   }).join('');
   const total = monthExpenses.reduce((a,e)=>a+e.amount,0);
 
@@ -5507,23 +5550,32 @@ function shareExpenseEntries(){
   text += `\n${t('کل میزان','Grand total')}: ${fmtNum(total)}`;
   shareReport(t('مدوار اخراجات','Category-wise Expenses')+' — '+monthLabel(localSelectedMonth,LANG), text);
 }
-function openExpenseModal(){
-  expenseDraft = {date:todayStr(), billNo:'', headId: DB.expenseHeads[0]?DB.expenseHeads[0].id:'', detail:'', amount:''};
-  const headOptions = DB.expenseHeads.map(h=>`<option value="${h.id}">${LANG==='ur'?h.ur:h.en}</option>`).join('');
+function openExpenseModal(editId){
+  const ex = editId ? DB.expenses.find(x=>x.id===editId) : null;
+  expenseDraft = ex
+    ? {date:ex.date, billNo:ex.billNo||'', headId:ex.headId, detail:ex.detail||'', amount:String(ex.amount), editId:ex.id}
+    : {date:todayStr(), billNo:'', headId: DB.expenseHeads[0]?DB.expenseHeads[0].id:'', detail:'', amount:'', editId:null};
+  const headOptions = DB.expenseHeads.map(h=>`<option value="${h.id}" ${h.id===expenseDraft.headId?'selected':''}>${LANG==='ur'?h.ur:h.en}</option>`).join('');
   showModal(`
-    <h3>${t('نیا خرچ درج کریں','New Expense Entry')}</h3>
+    <h3>${ex ? t('خرچ میں ترمیم کریں','Edit Expense Entry') : t('نیا خرچ درج کریں','New Expense Entry')}</h3>
     <div class="row2">
       <div><label>${t('تاریخ','Date')}</label><input type="date" id="expDate" value="${expenseDraft.date}" onchange="expenseDraft.date=this.value"></div>
-      <div><label>${t('بل نمبر','Bill No.')}</label><input type="text" id="expBillNo" onchange="expenseDraft.billNo=this.value"></div>
+      <div><label>${t('بل نمبر','Bill No.')}</label><input type="text" id="expBillNo" value="${kEsc(expenseDraft.billNo)}" onchange="expenseDraft.billNo=this.value"></div>
     </div>
     <label>${t('مدوار اخراجات (کیٹیگری)','Expense Category')}</label>
     <select id="expHead" onchange="expenseDraft.headId=this.value">${headOptions}</select>
     <label>${t('تفصیل','Detail')}</label>
-    <input type="text" id="expDetail" onchange="expenseDraft.detail=this.value">
+    <input type="text" id="expDetail" value="${kEsc(expenseDraft.detail)}" onchange="expenseDraft.detail=this.value">
     <label>${t('بل رقم','Bill Amount')}</label>
-    <input type="number" min="0" id="expAmount" onchange="expenseDraft.amount=this.value">
+    <input type="number" min="0" id="expAmount" value="${expenseDraft.amount}" onchange="expenseDraft.amount=this.value">
     <button class="btn block" onclick="saveExpense()">${t('محفوظ کریں','Save')}</button>
   `);
+}
+function editExpense(id){
+  const ex0 = DB.expenses.find(x=>x.id===id);
+  if(!ex0) return;
+  if(isLocalMonthClosed(ex0.month)){ alert(t('یہ ماہ بند ہے — پہلے ماہ دوبارہ کھولیں۔','This month is closed — reopen it first.')); return; }
+  requireEditPin(()=>openExpenseModal(id));
 }
 function saveExpense(){
   const amount = parseFloat(expenseDraft.amount);
@@ -5538,7 +5590,12 @@ function saveExpense(){
     ));
     if(!ok) return;
   }
-  DB.expenses.push({id:uid('ex'), date:expenseDraft.date, month:monthRes.month, originalMonth:toMonth(expenseDraft.date), lateEntry:monthRes.lateEntry, billNo:expenseDraft.billNo, headId:expenseDraft.headId, detail:expenseDraft.detail, amount});
+  const exOld = expenseDraft.editId ? DB.expenses.find(x=>x.id===expenseDraft.editId) : null;
+  if(exOld){
+    Object.assign(exOld, {date:expenseDraft.date, month:monthRes.month, originalMonth:toMonth(expenseDraft.date), lateEntry:monthRes.lateEntry, billNo:expenseDraft.billNo, headId:expenseDraft.headId, detail:expenseDraft.detail, amount});
+  } else {
+    DB.expenses.push({id:uid('ex'), date:expenseDraft.date, month:monthRes.month, originalMonth:toMonth(expenseDraft.date), lateEntry:monthRes.lateEntry, billNo:expenseDraft.billNo, headId:expenseDraft.headId, detail:expenseDraft.detail, amount});
+  }
   saveDB(); localSelectedMonth = monthRes.month; closeModal(); render();
 }
 function deleteExpense(id){
