@@ -750,7 +750,6 @@ body.dark #appMenu .am-zoom button{background:#2a3a2f;color:#e9e1c9;}
       <div style="display:flex; align-items:center; gap:6px;">
         <button class="icon-btn" onclick="openQuickActions()" title="${LANG==='ur'?'کوئیک ایکسز':'Quick Access'}">⚡</button>
         <button class="icon-btn" id="pwaInstallBtn" onclick="requireBackupThenInstall()" title="${LANG==='ur'?'ایپ انسٹال کریں':'Install App'}" style="display:none;">📲</button>
-        <button class="icon-btn" id="appMenuBtn" type="button" onclick="toggleAppMenu(event)" title="ایپ معلومات اور ٹولز / App info &amp; tools" aria-haspopup="true" aria-expanded="false">⋯</button>
         <button class="settings-gear admin-only" onclick="openSettingsModal()" title="${LANG==='ur'?'سیٹنگز':'Settings'}">⚙️</button>
         <div class="lang-toggle">
           <button id="btnUr" class="active" onclick="setLang('ur')">اردو</button>
@@ -1083,6 +1082,7 @@ function printReport(title, bodyHtml, extra){
     : t('اس رپورٹ کے لیے بلاکس کی ضرورت نہیں','Blocks not needed for this report');
   showModal(`
     <h3>${t('پرنٹ کریں','Print')}</h3>
+    <div class="po-grid">
     <div class="print-opt-card" onclick="applyAutoPrint('${title.replace(/'/g,"\\'")}', window.__printBody)">
       <div class="ttl">⚙️ ${t('آٹو سیٹنگز','Auto Settings')}</div>
       <div class="desc">${t('Smart diagnostic & Auto layout — کالمز کے حساب سے خودکار سمت و فونٹ','Smart diagnostic & Auto layout — orientation & font picked automatically')}</div>
@@ -1097,7 +1097,6 @@ function printReport(title, bodyHtml, extra){
       <div class="ls-txt">
         <div class="ttl">${t('لینڈ سکیپ (کاغذی فارم کے مطابق)','Landscape (paper form layout)')}</div>
         <div class="desc">${t('کاغذی روزنامچہ جیسا پرنٹ: لازمی چندے اور طوعی و لوکل چندے کے الگ گروپ، نیچے والی مد ہلکے رنگ میں','Paper-daybook style print: separate Compulsory and Voluntary & Local groups, lower heads lightly shaded')}</div>
-        <div class="ls-tags"><span>A4 ${t('لینڈ سکیپ','Landscape')}</span><span>${t('گروپ وائز','Grouped')}</span><span>${t('ہلکا ہائی لائٹ','Light highlight')}</span></div>
       </div>
       <div class="ls-go">‹</div>
     </div>` : ''}
@@ -1112,6 +1111,7 @@ function printReport(title, bodyHtml, extra){
     <div class="print-opt-card" onclick="downloadReportCsv('${title.replace(/'/g,"\\'")}', window.__printBody)">
       <div class="ttl">📊 ${t('Excel / CSV ایکسپورٹ','Excel / CSV Export')}</div>
       <div class="desc">${t('یہ رپورٹ CSV فائل کی صورت میں ڈاؤن لوڈ کریں — Excel میں براہ راست کھلتی ہے','Download this report as a CSV file — opens directly in Excel')}</div>
+    </div>
     </div>
   `);
   window.__printBody = bodyHtml; // stash the (possibly large) html once, outside the onclick attribute strings
@@ -2953,10 +2953,10 @@ function renderDashboard(){
         <div class="dash-card wide" role="button" tabindex="0" style="cursor:pointer;" onclick="openMuhassilBookModal()" onkeydown="if(event.key==='Enter') openMuhassilBookModal()"><div class="n">📚 ${muhassilBookCount()}</div><div class="l">${t('محاصل بک ٹوٹل','Muhassil Book Total')}</div></div>
       </div>
       <div class="dash-actions">
-        <button class="dash-act a1" onclick="openEntryModal()"><span class="ico">＋</span><span>${t('نئی رسید','New Receipt')}<small>${t('فوری اندراج','Quick entry')}</small></span></button>
-        <button class="dash-act a2" onclick="printReport('${t('ڈیش بورڈ سمری','Dashboard Summary')}', window.__dashHtml)"><span class="ico">⬇</span><span>${t('ایکسپورٹ (PDF/Excel)','Export (PDF/Excel)')}<small>${t('پرنٹ، PDF یا ایکسل','Print, PDF or Excel')}</small></span></button>
-        <button class="dash-act a3" onclick="openDefaultersModal()"><span class="ico">📋</span><span>${t('بقایا داروں کی فہرست','Defaulters List')}<small>${t('بقایا جات کی تفصیل','Outstanding details')}</small></span></button>
-        <button class="dash-act a4" onclick="openRemittanceSummaryModal()"><span class="ico">📊</span><span>${t('ترسیل سمری','Remittance Summary')}<small>${t('ماہ وار مد وار','Month & head wise')}</small></span></button>
+        <button class="dash-act a1" onclick="openEntryModal()"><span class="ico">＋</span><span>${t('نئی رسید','New Receipt')}</span></button>
+        <button class="dash-act a2" onclick="printReport('${t('ڈیش بورڈ سمری','Dashboard Summary')}', window.__dashHtml)"><span class="ico">⬇</span><span>${t('ایکسپورٹ (PDF/Excel)','Export (PDF/Excel)')}</span></button>
+        <button class="dash-act a3" onclick="openDefaultersModal()"><span class="ico">📋</span><span>${t('بقایا داروں کی فہرست','Defaulters List')}</span></button>
+        <button class="dash-act a4" onclick="openRemittanceSummaryModal()"><span class="ico">📊</span><span>${t('ترسیل سمری','Remittance Summary')}</span></button>
       </div>
       <div class="note">${t('یہ صفحہ ایپ کھلتے ہی سب سے پہلے نظر آتا ہے اور روزانہ کی صورتحال کا فوری جائزہ دیتا ہے۔','This page opens first every time and gives a quick daily overview.')}</div>
     </div>`;
@@ -3147,7 +3147,7 @@ function renderRoznamcha(){
         <td style="white-space:normal; text-align:${LANG==='ur'?'right':'left'};">${nameDisplay}${!k?` <span style="color:var(--ink-soft);font-size:10.5px;">(${t('بغیر کھاتہ','no account')})</span>`:''}</td>
         ${cells}
         <td><b>${entryTotalStr(e)}</b></td>
-        <td style="white-space:normal; text-align:${LANG==='ur'?'right':'left'};">${e.kaifiyat||'-'}${e.muhassil?`<div style="font-size:10.5px;color:var(--ink-soft);">${t('محاصل','Muhassil')}: ${kEsc(e.muhassil)}</div>`:''}</td>
+        <td style="white-space:normal; text-align:${LANG==='ur'?'right':'left'};">${e.kaifiyat||''}${e.muhassil?`<div style="font-size:10.5px;color:var(--ink-soft);">${t('محاصل','Muhassil')}: ${kEsc(e.muhassil)}</div>`:''}</td>
         <td>${e.cancelled?'':`<button class="row-del" style="color:var(--cover-green);" title="${t('رسید پرنٹ/PDF','Print/PDF receipt')}" onclick="printSingleReceipt('${e.id}')">🧾</button><button class="row-del" style="color:#7a5b1e;" title="${t('تھرمل پرنٹر','Thermal printer')}" onclick="openThermalPrintChoice('${e.id}')">🖨️</button><button class="row-del" style="color:#1fae59;" title="${t('واٹس ایپ پر رسید بھیجیں','Send receipt via WhatsApp')}" onclick="shareSingleReceiptWhatsApp('${e.id}')">💬</button>`}<button class="row-del" title="${t('حذف کریں','Delete')}" onclick="deleteEntry('${e.id}')">🗑</button></td>
       </tr>`;
     }).join('');
@@ -3247,7 +3247,7 @@ function roznamchaMonthHtml(month){
       const k = e.khataId ? DB.khatas.find(x=>x.id===e.khataId) : null;
       const nm = k ? (LANG==='ur'?k.name_ur:k.name_en) : (e.manualName || t('نامعلوم','Unknown'));
       const cells = pageHeadIds.map(id=>`<td>${e.amounts[id]?fmtNum(e.amounts[id]):(e.cancelled?'-':'')}</td>`).join('');
-      return `<tr><td>${runningIndex}</td><td>${k?k.number:'—'}</td><td>${e.date}</td><td>${e.receiptNo||'-'}</td><td>${e.bookNo||'-'}</td><td>${nm}</td>${cells}<td>${entryTotalStr(e)}</td><td>${e.kaifiyat||'-'}${e.muhassil?`<br>${t('محاصل','Muhassil')}: ${kEsc(e.muhassil)}`:''}</td></tr>`;
+      return `<tr><td>${runningIndex}</td><td>${k?k.number:'—'}</td><td>${e.date}</td><td>${e.receiptNo||'-'}</td><td>${e.bookNo||'-'}</td><td>${nm}</td>${cells}<td>${entryTotalStr(e)}</td><td>${e.kaifiyat||''}${e.muhassil?`<br>${t('محاصل','Muhassil')}: ${kEsc(e.muhassil)}`:''}</td></tr>`;
     }).join('');
     const pageTotal = pageEntries.reduce((a,e)=>a+e.total,0);
     // heads-wise total for the receipts printed on THIS page only
@@ -7430,6 +7430,45 @@ function downloadHtmlArchive(title, bodyHtml){
 .dash-act.a2 .ico{background:rgba(255,255,255,.35);}
 .dash-act.a3{background:linear-gradient(135deg,#a32a2a,#d4554a);}
 .dash-act.a4{background:linear-gradient(135deg,#1f4e79,#3b82b8);}
+</style>
+
+<style id="rzCompactStyle">
+/* ---- dashboard action buttons: small, clear ---- */
+.dash-actions{display:flex !important;flex-wrap:wrap;gap:8px !important;margin-top:12px !important;}
+.dash-actions .dash-act{flex:0 1 auto;padding:7px 14px 7px 12px !important;border-radius:10px !important;font-size:13px !important;gap:7px !important;box-shadow:0 2px 6px rgba(0,0,0,.18) !important;}
+.dash-actions .dash-act .ico{flex:0 0 24px !important;height:24px !important;border-radius:7px !important;font-size:14px !important;}
+.dash-actions .dash-act:hover{transform:translateY(-1px) !important;}
+/* ---- print dialog: compact two-column cards ---- */
+.modal:has(.po-grid){max-width:620px;padding:12px 14px;}
+.modal:has(.po-grid) h3{margin:0 0 8px;font-size:16px;}
+.po-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.po-grid .print-opt-card{margin:0 !important;padding:8px 11px !important;border-radius:11px;background:linear-gradient(135deg,#fffefb,#fbf5e2);box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.po-grid .print-opt-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.14);border-color:var(--gold);}
+.po-grid .print-opt-card .ttl{font-size:13px;gap:6px;}
+.po-grid .print-opt-card .desc{font-size:10.5px;line-height:1.5;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.po-grid .print-opt-card .hint{font-size:10px;margin-top:4px;padding:2px 7px;}
+.po-grid .ls-card{grid-column:1 / -1;padding:8px 11px !important;gap:10px;}
+.po-grid .ls-card .ls-ico{flex:0 0 34px;height:34px;font-size:17px;border-radius:9px;}
+.po-grid .ls-card .ls-go{font-size:20px;}
+@media (max-width:560px){.po-grid{grid-template-columns:1fr;}}
+/* ---- daybook screen: use the full width, small toolbar, tighter table ---- */
+@media (min-width:860px){
+  .app{max-width:100vw !important;}
+  header.top{margin:8px 8px 0 !important;}
+  main{max-width:none !important;padding:8px 8px 2px !important;}
+  #mainArea .card{padding:10px 12px !important;margin-bottom:8px !important;}
+  #mainArea .card>h2{font-size:15px;padding-bottom:5px !important;margin-bottom:7px !important;}
+  #mainArea .pill-row{margin-bottom:6px;padding-bottom:3px;}
+  #mainArea .pill{padding:3px 12px !important;font-size:12px;line-height:1.7;}
+  #mainArea .toolbar{gap:6px !important;margin-bottom:6px !important;}
+  #mainArea .toolbar .btn{padding:3px 10px !important;font-size:12px !important;border-radius:9px !important;line-height:1.7;}
+  #mainArea .tbl-wrap{max-height:calc(100vh - 190px) !important;max-height:calc(100dvh - 190px) !important;border-radius:10px !important;}
+  table.ledger{font-size:12.5px !important;}
+  table.ledger th,table.ledger td{padding:3px 5px !important;line-height:1.5 !important;}
+  table.ledger thead th{font-size:12px !important;}
+  table.ledger td:nth-child(6){min-width:130px !important;}
+  .fab{inset-inline-end:22px !important;}
+}
 </style>
 </head>
   <body>
