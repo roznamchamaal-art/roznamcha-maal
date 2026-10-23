@@ -711,6 +711,29 @@ body.dark #appMenu .am-zoom button{background:#2a3a2f;color:#e9e1c9;}
 header.top .lang-toggle{display:inline-flex !important;align-items:center;gap:0 !important;padding:2px !important;border-radius:999px !important;background:rgba(255,255,255,.1) !important;border:1px solid rgba(255,255,255,.18) !important;}
 header.top .lang-toggle button{padding:1px 9px !important;font-size:11px !important;line-height:1.7 !important;min-width:0 !important;border-radius:999px !important;border:none !important;background:transparent;color:rgba(255,255,255,.78);font-weight:700;cursor:pointer;}
 header.top .lang-toggle button.active{background:linear-gradient(135deg,#e6bd4a,#c99a1d) !important;color:#13281c !important;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+
+.dash-act.a5{background:linear-gradient(135deg,#5b3a8c,#8f6bc4);}
+.dash-act.a6{background:linear-gradient(135deg,#0f6b6b,#3aa6a0);}
+.dash-cnt{display:inline-block;min-width:20px;padding:0 6px;margin-inline-start:4px;border-radius:999px;background:rgba(255,255,255,.28);font-size:11.5px;text-align:center;line-height:1.6;}
+.hd-dd{position:relative;margin-bottom:6px;}
+.hd-dd-btn{width:100%;display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:1.5px solid rgba(184,134,11,.45);background:linear-gradient(180deg,#fffefa,#f8f1da);font-family:inherit;font-size:13.5px;font-weight:700;color:#123524;cursor:pointer;text-align:start;}
+.hd-dd-btn:hover{border-color:#b8860b;}
+.hd-dd-btn .cur{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hd-dd-btn .chev{font-size:12px;color:#b8860b;transition:transform .2s;}
+.hd-dd.open .hd-dd-btn .chev{transform:rotate(180deg);}
+.hd-dd-panel{display:none;margin-top:5px;border:1.5px solid rgba(184,134,11,.35);border-radius:12px;background:#fffdf6;box-shadow:0 8px 20px rgba(0,0,0,.10);overflow:hidden;}
+.hd-dd.open .hd-dd-panel{display:block;}
+.hd-dd-list{max-height:250px;overflow-y:auto;}
+.hd-dd-item{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid #efe6c8;cursor:pointer;font-size:13.5px;margin:0;}
+.hd-dd-item:hover{background:#f6efd6;}
+.hd-dd-item input{width:17px;height:17px;flex:none;accent-color:#2f7a52;}
+.hd-dd-item.dis{opacity:.4;cursor:not-allowed;}
+.hd-dd-item.all{background:#eaf3ec;font-weight:700;color:#123524;}
+.hd-dd-hint{padding:6px 14px;font-size:11.5px;color:#7a6b45;background:#faf5e3;}
+.cf-in{width:100%;min-width:0;padding:5px 6px;border:1px solid #e0d6b3;border-radius:7px;background:#fffefb;font-family:inherit;font-size:12.5px;}
+.cf-sec{margin:12px 0 5px;padding:6px 12px;border-radius:9px;background:#eaf3ec;color:#123524;font-weight:700;font-size:13.5px;}
+.cf-tot{display:flex;justify-content:space-between;gap:10px;padding:7px 12px;border-radius:9px;background:#fbf4d9;font-weight:700;font-size:13.5px;margin-top:6px;}
+.cf-grand{background:linear-gradient(135deg,#123524,#2f7a52);color:#fff;}
 /* ================= dropdown selects: nicer look everywhere ================= */
 select{border:1.5px solid #cdbf8f !important;border-radius:10px !important;box-shadow:0 1px 3px rgba(0,0,0,.08);transition:border-color .15s,box-shadow .15s;font-weight:600;}
 select:hover{border-color:#b8862f !important;}
@@ -1512,6 +1535,7 @@ function migrateDB(){
   if(DB.incomeHeads===undefined) DB.incomeHeads=defaultIncomeHeads();
   if(DB.incomeEntries===undefined) DB.incomeEntries=[];
   if(DB.orgName===undefined) DB.orgName='';
+  if(DB.cashForms===undefined) DB.cashForms={};
   if(DB.cashOpeningBalance===undefined) DB.cashOpeningBalance=0;
   if(DB.security===undefined) DB.security={pinEnabled:false, pinHash:'', editPinEnabled:false, editPinHash:'', biometricEnabled:false, biometricCredId:'', backupEncEnabled:false, backupPassHash:'', dataEncEnabled:false};
   if(DB.security.backupEncEnabled===undefined) DB.security.backupEncEnabled=false;
@@ -3148,12 +3172,13 @@ function renderDashboard(){
         <div class="dash-card due"><div class="n">${fmtNum(totalBaqaya)}</div><div class="l">${t('بقایا جات','Outstanding dues')}</div></div>
         <div class="dash-card"><div class="n">${fmtNum(monthExpense)}</div><div class="l">${t('لوکل خرچ (اس ماہ)','Local kharch (this month)')}</div></div>
         <div class="dash-card"><div class="n">${fmtNum(cashOnHand)}</div><div class="l">${t('نقد بیلنس','Cash on hand')}</div></div>
-        <div class="dash-card wide" role="button" tabindex="0" style="cursor:pointer;" onclick="openMuhassilBookModal()" onkeydown="if(event.key==='Enter') openMuhassilBookModal()"><div class="n">📚 ${muhassilBookCount()}</div><div class="l">${t('محاصل بک ٹوٹل','Muhassil Book Total')}</div></div>
       </div>
       <div class="dash-actions">
         <button class="dash-act a1" onclick="openEntryModal()"><span class="ico">＋</span><span>${t('نئی رسید','New Receipt')}</span></button>
         <button class="dash-act a2" onclick="printReport('${t('ڈیش بورڈ سمری','Dashboard Summary')}', window.__dashHtml)"><span class="ico">⬇</span><span>${t('ایکسپورٹ (PDF/Excel)','Export (PDF/Excel)')}</span></button>
         <button class="dash-act a3" onclick="openDefaultersModal()"><span class="ico">📋</span><span>${t('بقایا داروں کی فہرست','Defaulters List')}</span></button>
+        <button class="dash-act a5" onclick="openMuhassilBookModal()"><span class="ico">📚</span><span>${t('رسید بک خلاصہ رپورٹ','Receipt Book Summary')} <small class="dash-cnt">${muhassilBookCount()}</small></span></button>
+        <button class="dash-act a6" onclick="openCashDetailsModal()"><span class="ico">💵</span><span>${t('تفصیلات کیش','Cash Details')}</span></button>
         <button class="dash-act a4" onclick="openRemittanceSummaryModal()"><span class="ico">📊</span><span>${t('ترسیل سمری','Remittance Summary')}</span></button>
       </div>
     </div>`;
@@ -3193,6 +3218,106 @@ function muhassilBookRows(monthFilter, nameFilter){
     return {month:g.month, book:g.book, from:rc[0]||'', to:rc[rc.length-1]||'', names:Array.from(g.names), total:g.total, count:g.count, cancelled:g.cancelled};
   }).sort((a,b)=> a.month<b.month ? -1 : a.month>b.month ? 1 : natCmp(a.book,b.book));
 }
+/* ============ تفصیلات کیش — امین کے پاس جمع کروائی گئی نقد رقم اور چیکوں کی تفصیلات ============ */
+let cashFormMonth = '';
+function cashFormGet(m){
+  if(!DB.cashForms) DB.cashForms = {};
+  if(!DB.cashForms[m]){
+    const mk = ()=>({bank:'',date:'',slip:'',amt:'',note:''});
+    const bk = ()=>({desc:t('نقد رقم','Cash'),date:'',chq:'',amt:'',note:''});
+    DB.cashForms[m] = {jamaat:(DB.orgName||''), a:Array.from({length:10},mk), b:[bk(),bk()], ameen:'', sdate:''};
+  }
+  return DB.cashForms[m];
+}
+function cfSum(rows){ return rows.reduce((x,r)=>x+(parseFloat(r.amt)||0),0); }
+let __cfTimer = null;
+function cfSet(sec,i,key,val){ const f=cashFormGet(cashFormMonth); if(sec==='x') f[key]=val; else f[sec][i][key]=val; cfTotals(); clearTimeout(__cfTimer); __cfTimer=setTimeout(()=>{ try{saveDB();}catch(e){} },500); }
+function cfTotals(){
+  const f=cashFormGet(cashFormMonth); const A=cfSum(f.a), B=cfSum(f.b);
+  const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=fmtNum(v); };
+  set('cfTa',A); set('cfTb',B); set('cfTg',A+B);
+}
+function cfAddRow(sec){ const f=cashFormGet(cashFormMonth); f[sec].push(sec==='a'?{bank:'',date:'',slip:'',amt:'',note:''}:{desc:t('نقد رقم','Cash'),date:'',chq:'',amt:'',note:''}); saveDB(); renderCashModal(); }
+function cfDelRow(sec){ const f=cashFormGet(cashFormMonth); if(f[sec].length>1){ f[sec].pop(); saveDB(); renderCashModal(); } }
+function cfClear(){ if(!confirm(t('اس ماہ کا فارم صاف کر دیں؟','Clear this month\'s form?'))) return; delete DB.cashForms[cashFormMonth]; saveDB(); renderCashModal(); }
+function openCashDetailsModal(){
+  if(!cashFormMonth){ const d=new Date(); cashFormMonth = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+  renderCashModal();
+}
+function renderCashModal(){
+  const f = cashFormGet(cashFormMonth);
+  const inp=(sec,i,key,val,type,ph)=>`<input class="cf-in" type="${type||'text'}" ${type==='number'?'inputmode="decimal" min="0"':''} value="${kEsc(val||'')}" placeholder="${ph||''}" oninput="cfSet('${sec}',${i},'${key}',this.value)">`;
+  const rowsA = f.a.map((r,i)=>`<tr><td>${i+1}</td><td>${inp('a',i,'bank',r.bank)}</td><td>${inp('a',i,'date',r.date,'date')}</td><td>${inp('a',i,'slip',r.slip)}</td><td>${inp('a',i,'amt',r.amt,'number','0')}</td><td>${inp('a',i,'note',r.note)}</td></tr>`).join('');
+  const rowsB = f.b.map((r,i)=>`<tr><td>${i+1}</td><td>${inp('b',i,'desc',r.desc)}</td><td>${inp('b',i,'date',r.date,'date')}</td><td>${inp('b',i,'chq',r.chq)}</td><td>${inp('b',i,'amt',r.amt,'number','0')}</td><td>${inp('b',i,'note',r.note)}</td></tr>`).join('');
+  const A=cfSum(f.a), B=cfSum(f.b);
+  showModal(`
+    <h3>💵 ${t('تفصیلات کیش','Cash Details')}</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:150px;"><label>${t('جماعت احمدیہ','Jamaat')}</label><input class="cf-in" type="text" value="${kEsc(f.jamaat)}" oninput="cfSet('x',0,'jamaat',this.value)"></div>
+      <div style="flex:1;min-width:150px;"><label>${t('ماہ','Month')}</label><input class="cf-in" type="month" value="${cashFormMonth}" onchange="if(this.value){cashFormMonth=this.value;renderCashModal();}"></div>
+    </div>
+    <div class="cf-sec">${t('حصہ الف: بینکوں میں جمع کروائی گئی نقد رقم کی تفصیلات','Part A: Cash deposited in banks')}</div>
+    <div class="tbl-wrap"><table class="ledger"><thead><tr><th>${t('نمبر','#')}</th><th>${t('بینک کا نام','Bank')}</th><th>${t('تاریخ','Date')}</th><th>${t('ڈپازٹ سلپ / چیک نمبر','Slip / Cheque no.')}</th><th>${t('رقم','Amount')}</th><th>${t('کیفیت','Remarks')}</th></tr></thead><tbody>${rowsA}</tbody></table></div>
+    <div style="display:flex;gap:6px;margin-top:5px;"><button class="btn outline sm" onclick="cfAddRow('a')">＋ ${t('قطار','Row')}</button><button class="btn outline sm" onclick="cfDelRow('a')">－</button></div>
+    <div class="cf-tot"><span>${t('حصہ الف کا کل میزان','Part A total')}</span><span id="cfTa">${fmtNum(A)}</span></div>
+    <div class="cf-sec">${t('حصہ ب: امارت کے حوالے سے کیے گئے حکم کی تفصیلات','Part B: Amount handed over to Amarat')}</div>
+    <div class="tbl-wrap"><table class="ledger"><thead><tr><th>${t('نمبر','#')}</th><th>${t('تفصیل / رقم کی نوعیت','Details')}</th><th>${t('تاریخ','Date')}</th><th>${t('چیک نمبر','Cheque no.')}</th><th>${t('رقم','Amount')}</th><th>${t('کیفیت','Remarks')}</th></tr></thead><tbody>${rowsB}</tbody></table></div>
+    <div style="display:flex;gap:6px;margin-top:5px;"><button class="btn outline sm" onclick="cfAddRow('b')">＋ ${t('قطار','Row')}</button><button class="btn outline sm" onclick="cfDelRow('b')">－</button></div>
+    <div class="cf-tot"><span>${t('حصہ ب کا کل میزان','Part B total')}</span><span id="cfTb">${fmtNum(B)}</span></div>
+    <div class="cf-tot cf-grand"><span>${t('حصہ الف + حصہ ب کا مجموعی میزان','Grand total (A + B)')}</span><span id="cfTg">${fmtNum(A+B)}</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+      <div style="flex:1;min-width:150px;"><label>${t('امین حلقہ (نام)','Ameen Halqa (name)')}</label><input class="cf-in" type="text" value="${kEsc(f.ameen)}" oninput="cfSet('x',0,'ameen',this.value)"></div>
+      <div style="flex:1;min-width:150px;"><label>${t('تاریخ','Date')}</label><input class="cf-in" type="date" value="${kEsc(f.sdate)}" onchange="cfSet('x',0,'sdate',this.value)"></div>
+    </div>
+    <div class="toolbar" style="margin-top:12px;">
+      <button class="btn outline sm" onclick="printCashForm()">🖨 ${t('پرنٹ','Print')}</button>
+      <button class="btn outline sm" onclick="shareCashForm()">📤 ${t('شیئر','Share')}</button>
+      <button class="btn outline sm" onclick="cfClear()">🗑 ${t('صاف','Clear')}</button>
+    </div>`);
+}
+function cashFormPrintHtml(){
+  const f = cashFormGet(cashFormMonth); const A=cfSum(f.a), B=cfSum(f.b);
+  const pad=(rows,n)=>{ const r=rows.slice(); while(r.length<n) r.push(null); return r; };
+  const cell=v=>v?kEsc(v):'&nbsp;';
+  const amt=r=>(r&&r.amt)?fmtNum(parseFloat(r.amt)):'&nbsp;';
+  const ra = pad(f.a,10).map((r,i)=>`<tr><td>${i+1}</td><td>${r?cell(r.bank):'&nbsp;'}</td><td>${r?cell(r.date):'&nbsp;'}</td><td>${r?cell(r.slip):'&nbsp;'}</td><td>${amt(r)}</td><td>${r?cell(r.note):'&nbsp;'}</td></tr>`).join('');
+  const rb = pad(f.b,2).map((r,i)=>`<tr><td>${i+1}</td><td>${r?cell(r.desc):'&nbsp;'}</td><td>${r?cell(r.date):'&nbsp;'}</td><td>${r?cell(r.chq):'&nbsp;'}</td><td>${amt(r)}</td><td>${r?cell(r.note):'&nbsp;'}</td></tr>`).join('');
+  return `<style>
+    .cfp{font-size:13px;} .cfp .hd{text-align:center;padding:10px 8px;border:1.5px solid #cdbf8a;border-radius:12px;background:#fbf6e4;margin-bottom:10px;}
+    .cfp .hd b{font-size:16px;color:#123524;} .cfp .hd div{margin-top:4px;font-size:13px;}
+    .cfp .sec{margin:12px 0 5px;padding:5px 12px;border-radius:8px;background:#eaf3ec;color:#123524;font-weight:700;font-size:13px;}
+    .cfp table{margin-bottom:4px;} .cfp th{background:#f3ebc9;} .cfp td{height:26px;}
+    .cfp .tot{display:flex;justify-content:space-between;padding:6px 12px;border:1px solid #cdbf8a;border-radius:8px;background:#fbf6e4;font-weight:700;margin-top:4px;}
+    .cfp .gt{background:#e1efe5;border-color:#9cc2a8;}
+    .cfp .sig{display:flex;justify-content:space-between;margin-top:34px;gap:20px;} .cfp .sig div{flex:1;border-top:1px solid #8a7d55;padding-top:5px;text-align:center;font-size:12.5px;}
+  </style><div class="cfp">
+    <div class="hd"><b>${t('جماعت احمدیہ','Jamaat Ahmadiyya')} ${kEsc(f.jamaat||'__________')}</b>
+      <div>${t('امین کے پاس جمع کروائی گئی نقد رقم اور چیکوں کی تفصیلات','Details of cash and cheques deposited with the Ameen')}</div>
+      <div>${t('ماہ','Month')}: <b>${monthLabel(cashFormMonth,LANG)}</b></div></div>
+    <div class="sec">${t('حصہ الف: بینکوں میں جمع کروائی گئی نقد رقم کی تفصیلات','Part A: Cash deposited in banks')}</div>
+    <table><thead><tr><th style="width:8%">${t('نمبر شمار','No.')}</th><th>${t('بینک کا نام','Bank')}</th><th style="width:16%">${t('جمع کروانے کی تاریخ','Deposit date')}</th><th style="width:18%">${t('ڈپازٹ سلپ / چیک نمبر','Slip / Cheque no.')}</th><th style="width:14%">${t('رقم','Amount')}</th><th style="width:14%">${t('کیفیت','Remarks')}</th></tr></thead><tbody>${ra}</tbody></table>
+    <div class="tot"><span>${t('حصہ الف کا کل میزان','Part A total')}</span><span>${fmtNum(A)}</span></div>
+    <div class="sec">${t('حصہ ب: امارت کے حوالے سے کیے گئے حکم کی تفصیلات','Part B: Amount handed over to Amarat')}</div>
+    <table><thead><tr><th style="width:8%">${t('نمبر شمار','No.')}</th><th>${t('تفصیل / رقم کی نوعیت','Details')}</th><th style="width:16%">${t('تاریخ','Date')}</th><th style="width:18%">${t('چیک نمبر','Cheque no.')}</th><th style="width:14%">${t('رقم','Amount')}</th><th style="width:14%">${t('کیفیت','Remarks')}</th></tr></thead><tbody>${rb}</tbody></table>
+    <div class="tot"><span>${t('حصہ ب کا کل میزان','Part B total')}</span><span>${fmtNum(B)}</span></div>
+    <div class="tot gt"><span>${t('حصہ الف + حصہ ب کا مجموعی میزان','Grand total (A + B)')}</span><span>${fmtNum(A+B)}</span></div>
+    <div class="sig"><div>${t('امین حلقہ کے دستخط','Signature of Ameen Halqa')}${f.ameen?': '+kEsc(f.ameen):''}</div><div>${t('تاریخ','Date')}${f.sdate?': '+kEsc(f.sdate):''}</div></div>
+  </div>`;
+}
+function printCashForm(){
+  closeModal();
+  executePrint(t('تفصیلات کیش','Cash Details'), cashFormPrintHtml(), {orientation:'portrait', watermark:false});
+}
+function shareCashForm(){
+  const f = cashFormGet(cashFormMonth); const A=cfSum(f.a), B=cfSum(f.b);
+  let x = `${t('جماعت احمدیہ','Jamaat')} ${f.jamaat||''}\n${t('تفصیلات کیش','Cash Details')} — ${monthLabel(cashFormMonth,LANG)}\n\n${t('حصہ الف: بینکوں میں جمع شدہ','Part A: Bank deposits')}\n`;
+  f.a.forEach((r,i)=>{ if(r.bank||r.amt) x += `${i+1}. ${r.bank||'-'} | ${r.date||'-'} | ${r.slip||'-'} | ${fmtNum(parseFloat(r.amt)||0)}${r.note?' | '+r.note:''}\n`; });
+  x += `${t('میزان الف','Total A')}: ${fmtNum(A)}\n\n${t('حصہ ب: امارت','Part B: Amarat')}\n`;
+  f.b.forEach((r,i)=>{ if(r.amt||r.chq) x += `${i+1}. ${r.desc||'-'} | ${r.date||'-'} | ${r.chq||'-'} | ${fmtNum(parseFloat(r.amt)||0)}${r.note?' | '+r.note:''}\n`; });
+  x += `${t('میزان ب','Total B')}: ${fmtNum(B)}\n\n${t('مجموعی میزان','Grand total')}: ${fmtNum(A+B)}\n${t('امین حلقہ','Ameen Halqa')}: ${f.ameen||'__________'}`;
+  shareReport(t('تفصیلات کیش','Cash Details'), x);
+}
+
 function muhassilBookCount(){ return new Set(DB.entries.map(e=>String(e.bookNo||'').trim()).filter(Boolean)).size; }
 function muhassilRangeText(r){ return !r.from ? '-' : (r.from===r.to ? r.from : (LANG==='ur' ? `${r.from} تا ${r.to}` : `${r.from} – ${r.to}`)); }
 function muhassilTableHtml(rows, forPrint){
@@ -3211,7 +3336,7 @@ function renderMuhassilBookModal(){
   if(muhassilNameFilter!=='all' && muhassilNameFilter!=='__none__' && !names.includes(muhassilNameFilter)) muhassilNameFilter = 'all';
   const rows = muhassilBookRows(muhassilMonthFilter, muhassilNameFilter);
   showModal(`
-    <h3>📚 ${t('محاصل بک ٹوٹل','Muhassil Book Total')} ${fiscalYearBadgeHtml()}</h3>
+    <h3>📚 ${t('رسید بک خلاصہ رپورٹ','Receipt Book Summary Report')} ${fiscalYearBadgeHtml()}</h3>
     <div class="row2">
       <div><label>${t('ماہ','Month')}</label>
         <select onchange="muhassilMonthFilter=this.value; renderMuhassilBookModal();">
@@ -3240,15 +3365,31 @@ function muhassilFilterLabel(){
   else if(muhassilNameFilter!=='all') parts.push(muhassilNameFilter);
   return parts.length ? ' — '+parts.join(' / ') : '';
 }
+function muhassilPagedHtml(rows, perPage){
+  perPage = perPage||22;
+  const pages = []; for(let i=0;i<rows.length;i+=perPage) pages.push(rows.slice(i,i+perPage));
+  if(!pages.length) pages.push([]);
+  const grand = rows.reduce((a,r)=>a+r.total,0);
+  const grandLbl = muhassilMonthFilter!=='all' ? t('میزان اس ماہ','Month total')+' ('+monthLabel(muhassilMonthFilter,LANG)+')' : t('کل میزان','Grand total');
+  let n = 0;
+  return pages.map((pg,pi)=>{
+    const last = pi===pages.length-1;
+    const pgTotal = pg.reduce((a,r)=>a+r.total,0);
+    const body = pg.map(r=>`<tr><td>${++n}</td><td>${kEsc(r.book||'-')}</td><td>${kEsc(muhassilRangeText(r))}<div style="font-size:10px;color:#777;">${r.count} ${t('رسیدیں','receipts')}${r.cancelled?` · ${r.cancelled} ${t('کینسل','cancelled')}`:''}</div></td><td>${r.names.length?r.names.map(kEsc).join('، '):'—'}</td><td><b>${fmtNum(r.total)}</b></td><td>${monthLabel(r.month,LANG)}</td></tr>`).join('');
+    return `<div style="${last?'':'page-break-after:always;'}"><table><thead><tr><th>#</th><th>${t('کتاب نمبر','Book No.')}</th><th>${t('رسید نمبر','Receipt No.')}</th><th>${t('نام محاصل','Muhassil')}</th><th>${t('ٹوٹل','Total')}</th><th>${t('ماہ','Month')}</th></tr></thead><tbody>${body}
+      <tr class="total-row"><td colspan="4">${t('میزان صفحہ','Page total')} (${pi+1}/${pages.length})</td><td>${fmtNum(pgTotal)}</td><td></td></tr>
+      ${last?`<tr class="total-row" style="background:#dcebdf;"><td colspan="4">${grandLbl}</td><td>${fmtNum(grand)}</td><td></td></tr>`:''}</tbody></table></div>`;
+  }).join('');
+}
 function printMuhassilBooks(){
-  printReport(t('محاصل بک ٹوٹل','Muhassil Book Total')+' — '+DB.fiscalYear+muhassilFilterLabel(), muhassilTableHtml(muhassilBookRows(muhassilMonthFilter, muhassilNameFilter), true));
+  printReport(t('رسید بک خلاصہ رپورٹ','Receipt Book Summary Report')+' — '+DB.fiscalYear+muhassilFilterLabel(), muhassilPagedHtml(muhassilBookRows(muhassilMonthFilter, muhassilNameFilter), 22));
 }
 function shareMuhassilBooks(){
   const rows = muhassilBookRows(muhassilMonthFilter, muhassilNameFilter);
-  let text = `${t('محاصل بک ٹوٹل','Muhassil Book Total')} — ${DB.fiscalYear}${muhassilFilterLabel()}\n\n`;
+  let text = `${t('رسید بک خلاصہ رپورٹ','Receipt Book Summary Report')} — ${DB.fiscalYear}${muhassilFilterLabel()}\n\n`;
   rows.forEach((r,i)=>{ text += `${i+1}. ${t('کتاب','Book')} ${r.book||'-'} | ${t('رسید','Rcpt')} ${muhassilRangeText(r)} | ${r.names.length?r.names.join('، '):'—'} | ${fmtNum(r.total)} | ${monthLabel(r.month,LANG)}\n`; });
   text += `\n${t('میزان','Total')}: ${fmtNum(rows.reduce((a,r)=>a+r.total,0))}`;
-  shareReport(t('محاصل بک ٹوٹل','Muhassil Book Total'), text);
+  shareReport(t('رسید بک خلاصہ رپورٹ','Receipt Book Summary Report'), text);
 }
 
 /* ============ ROZNAMCHA TAB ============ */
@@ -4895,7 +5036,7 @@ function renderYearClosingModal(){
     <label>${t('کلوزنگ کی تاریخ (اس تاریخ تک کی وصولی شمار ہوگی)','Closing date (collections up to this date are counted)')}</label>
     <input type="date" id="yearClosingDateInput" value="${yearClosingDate}" onchange="yearClosingDate=this.value; renderYearClosingModal();">
     <label style="margin-top:10px;">${t('ہیڈز','Heads')}</label>
-    <div class="pill-row" style="flex-wrap:wrap; overflow-x:visible;">${headPills}</div>
+    ${headPills}
     <div style="margin-top:12px;">${listHtml}</div>
     <div class="toolbar" style="margin-top:12px;">
       <button class="btn outline sm" onclick="printYearClosing()">🖨 ${t('پرنٹ','Print')}</button>
@@ -5065,7 +5206,11 @@ function shareNamewiseList(){
    Tip: "Year start → today" gives the true balance as of today. */
 let defaultersFrom = '';
 let defaultersTo = '';
-function openDefaultersModal(){ renderDefaultersModal(); }
+window.__hdDdOpen = false;
+function toggleHdDD(ev){ if(ev) ev.stopPropagation(); window.__hdDdOpen = !window.__hdDdOpen; const d=document.getElementById('hdDD'); if(d) d.classList.toggle('open', window.__hdDdOpen); }
+document.addEventListener('click', function(e){ if(window.__hdDdOpen){ const d=document.getElementById('hdDD'); if(d && !d.contains(e.target)){ window.__hdDdOpen=false; d.classList.remove('open'); } } });
+function openDefaultersModal(){ window.__hdDdOpen=false; renderDefaultersModal(); }
+
 function toggleDefaultersHead(id){
   if(id==='all'){
     defaultersHeadIds = ['all'];
@@ -5131,12 +5276,18 @@ function getDefaultersRows(ignoreDates){
 }
 function renderDefaultersModal(){
   const allSelected = defaultersHeadIds.includes('all');
-  const headPills = `<button type="button" class="pill ${allSelected?'active':''}" onclick="toggleDefaultersHead('all')">${t('تمام ہیڈز','All heads')}</button>` +
+  const nmH = h=>LANG==='ur'?h.ur:h.en;
+  const pickedH = allSelected ? [] : defaultersHeadIds.map(id=>DB.heads.find(h=>h.id===id)).filter(Boolean);
+  const ddLabel = allSelected ? t('تمام ہیڈز','All heads') : (pickedH.slice(0,2).map(nmH).join('، ') + (pickedH.length>2?` +${pickedH.length-2}`:''));
+  const headPills = `<div class="hd-dd ${window.__hdDdOpen?'open':''}" id="hdDD">
+    <button type="button" class="hd-dd-btn" onclick="toggleHdDD(event)"><span>🏷</span><span class="cur">${ddLabel}</span><span class="chev">▾</span></button>
+    <div class="hd-dd-panel"><div class="hd-dd-list">
+      <label class="hd-dd-item all"><input type="checkbox" ${allSelected?'checked':''} onchange="toggleDefaultersHead('all')"><span>${t('تمام ہیڈز','All heads')}</span></label>` +
     DB.heads.map(h=>{
       const sel = defaultersHeadIds.includes(h.id);
       const lock = (!sel && !allSelected && defaultersHeadIds.length>=4);
-      return `<button type="button" class="pill ${sel?'active':''}" ${lock?'disabled':''} style="${lock?'opacity:.4;cursor:not-allowed;':''}" onclick="toggleDefaultersHead('${h.id}')">${LANG==='ur'?h.ur:h.en}</button>`;
-    }).join('');
+      return `<label class="hd-dd-item ${lock?'dis':''}"><input type="checkbox" ${sel?'checked':''} ${lock?'disabled':''} onchange="toggleDefaultersHead('${h.id}')"><span>${nmH(h)}</span></label>`;
+    }).join('') + `</div><div class="hd-dd-hint">${t('زیادہ سے زیادہ چار ہیڈز منتخب ہو سکتے ہیں','Up to four heads can be selected')}</div></div></div>`;
   const khataOptions = `<option value="all">${t('تمام کھاتہ جات','All accounts')}</option>` + DB.khatas.slice().sort((a,b)=>a.number-b.number).map(k=>`<option value="${k.id}" ${defaultersKhataId===k.id?'selected':''}>${k.number} — ${kEsc(LANG==='ur'?k.name_ur:k.name_en)}</option>`).join('');
   const rangeOn = defaultersRangeActive();
   const rg = defaultersRange();
