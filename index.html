@@ -675,6 +675,38 @@ body.lang-ur .lk-head h2{font-size:16.5px;}
 #appMenu hr{border:none;border-top:1px solid var(--rule,#d8cca4);margin:4px 8px;}
 body.dark #appMenu .am-zoom button{background:#2a3a2f;color:#e9e1c9;}
 @media print{#appMenu{display:none !important;}}
+
+/* ===== registers (stock / property) + compact forms ===== */
+.modal:has(.cmp-form){max-width:540px;padding:12px 16px 14px;border-radius:16px;border:1px solid var(--gold);}
+.cmp-form h3{margin:0 0 8px !important;padding-bottom:6px;border-bottom:2px solid var(--gold);font-size:16px !important;}
+.cmp-form label{margin:6px 0 2px;font-size:12px;}
+.cmp-form input[type=text],.cmp-form input[type=number],.cmp-form input[type=date],.cmp-form select{padding:6px 9px;font-size:13.5px;border-radius:8px;}
+.cmp-form .g2,.cmp-form .g3,.cmp-form .g4{display:grid;gap:8px;}
+.cmp-form .g2{grid-template-columns:1fr 1fr;} .cmp-form .g3{grid-template-columns:1fr 1fr 1fr;} .cmp-form .g4{grid-template-columns:1.4fr .8fr 1fr 1fr;}
+.cmp-form .btn.block{margin-top:10px;padding:8px 14px;background:linear-gradient(135deg,#1f4d36,#0d2a1c);color:#f7ecc8;font-size:14px;}
+.exp-cat-row{display:grid;grid-template-columns:minmax(0,1.3fr) auto auto;gap:8px;align-items:end;}
+.reg-chip{display:flex !important;align-items:center;gap:5px;border:1.5px solid #cdbf8f;border-radius:9px;background:#fffdf6;color:#2a2116 !important;padding:0 9px;height:32px;margin:0 !important;font-size:12.5px !important;cursor:pointer;white-space:nowrap;}
+.reg-chip input{width:15px;height:15px;margin:0;accent-color:#1f6b45;}
+.reg-chip:has(input:checked){background:linear-gradient(135deg,#e6f7ea,#c3ebcd);border-color:#4caf6d;font-weight:700;}
+.reg-box{margin-top:8px;padding:6px 10px 9px;border:1.5px dashed var(--gold);border-radius:10px;background:rgba(184,134,47,.09);}
+.reg-box .rb-t{font-size:12px;font-weight:700;color:var(--cover-green);margin-bottom:2px;}
+@media(max-width:520px){.exp-cat-row{grid-template-columns:1fr 1fr}.exp-cat-row>div{grid-column:1/-1}.cmp-form .g4{grid-template-columns:1fr 1fr}}
+.card table.reg{border:1.5px solid #123524;}
+.card table.reg th{background:linear-gradient(180deg,#256041,#123524) !important;color:#f7ecc8 !important;font-size:11.5px;padding:3px 5px;border-color:#0d2a1c;white-space:nowrap;}
+.card table.reg td{padding:2px 6px;font-size:12px;border-color:#b9a96c;}
+.card table.reg td.nm{text-align:start;font-weight:600;}
+.card table.reg td.low{color:#b3261e;font-weight:800;} .card table.reg td.ok{color:#14673f;}
+.card table.reg td.act{white-space:nowrap;padding:1px 4px;}
+.reg-sign{margin-top:14px;display:flex;justify-content:flex-end;}
+.reg-sign span{min-width:190px;text-align:center;border-top:1.5px solid var(--cover-green);padding-top:3px;font-size:12.5px;font-weight:700;color:var(--cover-green);}
+
+.reg-tag{display:inline-block;margin-inline-start:5px;padding:0 6px;border-radius:999px;font-size:10px;font-weight:700;line-height:1.7;vertical-align:middle;white-space:nowrap;}
+.reg-tag.stk{background:#e0efff;color:#12467e;border:1px solid #8fb9e6;}
+.reg-tag.prp{background:#f0e4ff;color:#5b2a8c;border:1px solid #bb98e4;}
+.card table.reg td.sigcell{cursor:pointer;min-width:62px;transition:background .15s;}
+.card table.reg td.sigcell:hover{background:rgba(201,162,39,.22);}
+.sig-ph{opacity:.45;font-size:13px;}
+.dash-act.a7{background:linear-gradient(135deg,#8c2f39,#c4584f);padding:5px 11px 5px 9px !important;font-size:12px !important;}
 </style>
 
 <style id="rzBeautyStyle">
@@ -852,6 +884,8 @@ header.top{overflow:visible !important;}
   header.top .desktop-tabs button[data-tab=heads]{--tc:#c26a1a;}
   header.top .desktop-tabs button[data-tab=summary]{--tc:#b83a3a;}
   header.top .desktop-tabs button[data-tab=local]{--tc:#137a7f;}
+  header.top .desktop-tabs button[data-tab=stock]{--tc:#2f5fb8;}
+  header.top .desktop-tabs button[data-tab=property]{--tc:#7b4bb0;}
 }
 </style>
 
@@ -999,18 +1033,18 @@ body.lang-ur .ib[data-s]::after{font-family:'Noto Nastaliq Urdu';line-height:1.8
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
           <span class="ur-only">کھاتہ جات</span><span class="en-only">Accounts</span>
         </button>
-        <button data-tab="heads" onclick="switchTab('heads')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12l-8 8-9-9V4h7l10 10z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>
-          <span class="ur-only">ہیڈز</span><span class="en-only">Heads</span>
-        </button>
-        <button data-tab="summary" onclick="switchTab('summary')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
-          <span class="ur-only">سمری</span><span class="en-only">Summary</span>
-        </button>
         <button data-tab="local" onclick="switchTab('local')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
           <span class="ur-only">لوکل خرچ</span><span class="en-only">Local Kharch</span>
         </button>
+    <button data-tab="stock" onclick="switchTab('stock')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>
+      <span class="ur-only">سٹاک رجسٹر</span><span class="en-only">Stock Register</span>
+    </button>
+    <button data-tab="property" onclick="switchTab('property')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 8h2M13 8h2M9 12h2M13 12h2M10 21v-4h4v4"/></svg>
+      <span class="ur-only">رجسٹر جائیداد</span><span class="en-only">Property Register</span>
+    </button>
       </nav>
       </div>
       <div class="desktop-search">
@@ -1037,17 +1071,17 @@ body.lang-ur .ib[data-s]::after{font-family:'Noto Nastaliq Urdu';line-height:1.8
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
       <span class="ur-only">کھاتہ جات</span><span class="en-only">Accounts</span>
     </button>
-    <button data-tab="heads" onclick="switchTab('heads')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12l-8 8-9-9V4h7l10 10z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>
-      <span class="ur-only">ہیڈز</span><span class="en-only">Heads</span>
-    </button>
-    <button data-tab="summary" onclick="switchTab('summary')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
-      <span class="ur-only">سمری</span><span class="en-only">Summary</span>
-    </button>
     <button data-tab="local" onclick="switchTab('local')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
       <span class="ur-only">لوکل خرچ</span><span class="en-only">Local Kharch</span>
+    </button>
+    <button data-tab="stock" onclick="switchTab('stock')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>
+      <span class="ur-only">سٹاک رجسٹر</span><span class="en-only">Stock Register</span>
+    </button>
+    <button data-tab="property" onclick="switchTab('property')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 8h2M13 8h2M9 12h2M13 12h2M10 21v-4h4v4"/></svg>
+      <span class="ur-only">رجسٹر جائیداد</span><span class="en-only">Property Register</span>
     </button>
   </nav>
 </div>
@@ -1189,7 +1223,7 @@ function executePrint(title, bodyHtml, opts){
   w.document.write(`<!DOCTYPE html><html lang="${LANG}" dir="${LANG==='ur'?'rtl':'ltr'}"><head><meta charset="UTF-8">
     <title>${title}</title>
     <style>
-      @page{ size: A4 ${orientation}; margin: 12mm; }
+      @page{ size: A4 ${orientation}; margin: ${opts.margin||'12mm'}; }
       *{box-sizing:border-box;}
       html,body{max-width:100%; overflow-x:hidden;}
       body{font-family:'Noto Nastaliq Urdu','Inter',sans-serif; padding:22px; color:#2a2116; position:relative;}
@@ -1222,15 +1256,16 @@ function executePrint(title, bodyHtml, opts){
         pointer-events:none; z-index:999; letter-spacing:4px;
       }
       @media print{ body{padding:0;} .print-actions{display:none;} .dup-watermark{position:fixed;} }
+      ${opts.extraCss||''}
     </style></head><body>
     ${isDuplicate ? `<div class="dup-watermark">${t('نقل — DUPLICATE COPY','DUPLICATE COPY')}</div>` : ''}
     <div class="print-actions">
       <button class="back" onclick="window.close();">${LANG==='ur'?'‹ واپس':'‹ Back'}</button>
       <button onclick="window.print();">${LANG==='ur'?'🖨 پرنٹ':'🖨 Print'}</button>
     </div>
-    ${orgName?`<div class="org-name">${orgName}</div>`:''}
+    ${opts.customHead!==undefined ? opts.customHead : `${orgName?`<div class="org-name">${orgName}</div>`:''}
     <h1>${title}</h1>
-    <div class="sub">${new Date().toLocaleString(LANG==='ur'?'ur':'en-US')}${isDuplicate?(' · '+t('نقل کاپی','Duplicate copy')):''}</div>
+    <div class="sub">${new Date().toLocaleString(LANG==='ur'?'ur':'en-US')}${isDuplicate?(' · '+t('نقل کاپی','Duplicate copy')):''}</div>`}
     ${bodyHtml}
     </body></html>`);
   w.document.close();
@@ -1553,6 +1588,8 @@ function migrateDB(){
   if(DB.settings===undefined) DB.settings={thermalWidth:'80mm'};
   if(DB.closedLocalMonths===undefined) DB.closedLocalMonths=[];
   if(DB.customLocalMonths===undefined) DB.customLocalMonths=[];
+  if(DB.stockRegister===undefined) DB.stockRegister=[];
+  if(DB.propertyRegister===undefined) DB.propertyRegister=[];
   if(DB.waCountryCode===undefined) DB.waCountryCode='92'; // used to auto-complete WhatsApp links for numbers stored in local "0..." format
   DB.expenses.forEach(ex=>{
     if(ex.lateEntry===undefined) ex.lateEntry=false;
@@ -2525,6 +2562,10 @@ function renderSettingsModal(){ if(!requireAdminRole()) return;
       <input type="text" value="${DB.orgName||''}" placeholder="${t('پرنٹ ہیڈ پر ظاہر ہوگا','Shown on the print header')}" onchange="setOrgName(this.value)">
     </details>
 
+    <div class="settings-row" style="padding:8px 10px;">
+      <button class="btn outline sm" style="width:100%;justify-content:center;gap:8px;" onclick="closeModal();switchTab('heads')">🏷 ${t('ہیڈز (روزنامچہ / آمد / اخراجات)','Heads (Daybook / Income / Expense)')}</button>
+    </div>
+
     <details class="settings-row" data-k="1" ${setOpen(1)} ontoggle="setToggled(this)">
       <summary class="st-title">📅 ${t('مالی سال','Fiscal Year')}</summary>
       <div style="font-size:12px;color:var(--ink-soft);">${t('کھاتے اسی سال کے ہیں۔ سال کے اختتام پر "سالانہ کلوزنگ" میں "نیا سال شروع کریں" دبائیں — تمام کھاتے نئے سال کے لیے سابقہ بقایا کے ساتھ خودکار بن جائیں گے۔','All accounts belong to this year. At year-end press "Start New Year" inside Annual Closing — every account is recreated for the new year with its previous balance.')}</div>
@@ -2920,7 +2961,7 @@ function seedDB(){
   addEntry(khatas[1].id, '2026-06-06', '102', '3', {[hChandaAam.id]:12500, [hJalsa.id]:12500, [hAmanat.id]:12500});
   addEntry(khatas[1].id, '2026-07-05', '119', '3', {[hChandaAam.id]:12500, [hJalsa.id]:12500, [hAmanat.id]:12500});
 
-  return {heads, khatas, entries, customMonths:[], monthShifts:{}, expenseHeads:defaultExpenseHeads(), expenses:[], incomeHeads:defaultIncomeHeads(), incomeEntries:[], orgName:'', cashOpeningBalance:0};
+  return {heads, khatas, entries, customMonths:[], monthShifts:{}, expenseHeads:defaultExpenseHeads(), expenses:[], incomeHeads:defaultIncomeHeads(), incomeEntries:[], stockRegister:[], propertyRegister:[], orgName:'', cashOpeningBalance:0};
 }
 
 /* ============ APP STATE ============ */
@@ -2988,6 +3029,7 @@ function switchTab(tab){
   selectedKhataId = null;
   summaryView = null;
   render();
+  if(window.syncNavDDLabel) syncNavDDLabel();
 }
 function onGlobalSearch(v){
   globalSearchQuery = v;
@@ -3010,6 +3052,7 @@ function clearGlobalSearch(){
 }
 function activateTabButtons(tab){
   document.querySelectorAll('nav.bottom button, .desktop-tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  if(window.syncNavDDLabel) syncNavDDLabel();
 }
 function searchGoKhata(id){ clearGlobalSearch(); TAB='khatas'; selectedKhataId=id; activateTabButtons('khatas'); render(); }
 function searchGoHeads(){ clearGlobalSearch(); TAB='heads'; activateTabButtons('heads'); render(); }
@@ -3128,7 +3171,9 @@ function render(){
   else if(TAB==='heads') main.innerHTML = renderHeads();
   else if(TAB==='summary') main.innerHTML = renderSummary();
   else if(TAB==='local') main.innerHTML = renderLocalKharch();
-  document.getElementById('fabBtn').style.display = (!q && (TAB==='roznamcha'||TAB==='khatas')) ? 'flex' : 'none';
+  else if(TAB==='stock') main.innerHTML = renderStockRegister();
+  else if(TAB==='property') main.innerHTML = renderPropertyRegister();
+  document.getElementById('fabBtn').style.display = (!q && TAB==='khatas') ? 'flex' : 'none';
   syncMobileSearchWidth();
 }
 function syncMobileSearchWidth(){
@@ -3180,6 +3225,7 @@ function renderDashboard(){
         <button class="dash-act a5" onclick="openMuhassilBookModal()"><span class="ico">📚</span><span>${t('رسید بک خلاصہ رپورٹ','Receipt Book Summary')} <small class="dash-cnt">${muhassilBookCount()}</small></span></button>
         <button class="dash-act a6" onclick="openCashDetailsModal()"><span class="ico">💵</span><span>${t('تفصیلات کیش','Cash Details')}</span></button>
         <button class="dash-act a4" onclick="openRemittanceSummaryModal()"><span class="ico">📊</span><span>${t('ترسیل سمری','Remittance Summary')}</span></button>
+        <button class="dash-act a7" title="${t('سمری','Summary')}" onclick="switchTab('summary')"><span class="ico">📈</span><span>${t('سمری','Summary')}</span></button>
       </div>
     </div>`;
 }
@@ -5722,7 +5768,7 @@ function setCashOpeningBalance(v){
 }
 function switchLocalSubtab(s){ LOCAL_SUBTAB = s; render(); }
 function localBarHead(months){
-  const views = [['cashbook',t('کیش بک','Cash Book')],['income',t('مدوار آمد','Category-wise Income')],['expenses',t('مدوار اخراجات','Category-wise Expenses')]];
+  const views = localViews();
   const vSel = `<select class="month-sel view-sel" onchange="switchLocalSubtab(this.value)" title="${t('صفحہ منتخب کریں','Select view')}">${views.map(v=>`<option value="${v[0]}" ${LOCAL_SUBTAB===v[0]?'selected':''}>${v[1]}</option>`).join('')}</select>`;
   const mSel = `<select class="month-sel" onchange="selectLocalMonth(this.value)" title="${t('مہینہ منتخب کریں','Select month')}">${months.map(m=>`<option value="${m}" ${m===localSelectedMonth?'selected':''}>${monthLabel(m,LANG)}${isLocalMonthClosed(m)?' 🔒':''}</option>`).join('')}</select>`;
   return vSel + mSel
@@ -5789,7 +5835,7 @@ function renderCashBook(){
   cashBookExpensePage = expensePageInfo.page;
   const expensePagerHtml = paginationBarHtml(expensePageInfo.page, expensePageInfo.totalPages, expenseRows.length, t('اندراجات','entries'), 'changeCashBookExpensePage(-1)', 'changeCashBookExpensePage(1)');
   const expenseHtml = expenseRows.length ? `${expensePagerHtml}<div class="tbl-wrap"><table class="ledger"><thead><tr><th>#</th><th>${t('تاریخ','Date')}</th><th>${t('بل نمبر','Bill No.')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th><th></th></tr></thead>
-    <tbody>${expensePageInfo.items.map((e,i)=>{const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${(expensePageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${e.lateEntry?` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>`:''}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td><td>${localRowActions('editExpense','deleteExpense',e.id)}</td></tr>`;}).join('')}
+    <tbody>${expensePageInfo.items.map((e,i)=>{const h=DB.expenseHeads.find(x=>x.id===e.headId); return `<tr><td>${(expensePageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${e.lateEntry?` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>`:''}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}${regTagHtml(e)}</td><td>${fmtNum(e.amount)}</td><td>${localRowActions('editExpense','deleteExpense',e.id)}</td></tr>`;}).join('')}
     <tr class="total-row"><td colspan="5">${t('کل خرچ (تمام صفحات)','Total expense (all pages)')}</td><td>${fmtNum(totalExpense)}</td><td></td></tr></tbody></table></div>${expensePagerHtml}`
     : `<div class="empty">${t('اس ماہ کوئی خرچ درج نہیں','No expenses recorded this month')}</div>`;
 
@@ -5852,7 +5898,7 @@ function cashBookMonthHtml(month){
     let expCells = blankExp;
     if(e){
       const h = DB.expenseHeads.find(x=>x.id===e.headId);
-      expCells = `<td>${e.date}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="text-align:${al}">${e.detail||'-'}</td><td>${fmtNum(e.amount)}</td>`;
+      expCells = `<td>${e.date}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="text-align:${al}">${e.detail||'-'}${regTagHtml(e)}</td><td>${fmtNum(e.amount)}</td>`;
     }
     body += `<tr>${incCells}${gapTd}${expCells}</tr>`;
   }
@@ -5868,8 +5914,66 @@ function cashBookMonthHtml(month){
     </thead>
     <tbody>${body}</tbody></table>`;
 }
+
+const CB_PRINT_CSS = `
+  *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  body{padding:0 !important;color:#222;}
+  .print-actions{margin-bottom:6px !important;}
+  .cb-head{display:flex;align-items:center;gap:10px;background:#f1ead0;color:#2a2116;border:1px solid #a89c6a;border-bottom:2px solid #a89c6a;border-radius:7px;padding:3px 12px;margin-bottom:5px;}
+  .cb-org{flex:1;font-size:12px;font-weight:700;}
+  .cb-title{flex:1.5;text-align:center;font-size:15px;font-weight:800;color:#222;}
+  .cb-date{flex:1;text-align:end;font-size:9px;color:#555;direction:ltr;}
+  table.cb{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10.5px;margin:0;border:1.4px solid #8c8c8c;}
+  table.cb th,table.cb td{border:.7px solid #b5b5b5;padding:0 4px;line-height:1.5;text-align:center;overflow-wrap:anywhere;color:#222;}
+  table.cb thead th{background:#ece6cf;color:#2a2116;padding:1px 3px;border-color:#a8a8a8;font-size:10.5px;}
+  table.cb thead tr.grp th{background:#f6ecc0;color:#2a2116;font-size:11.5px;}
+  table.cb th.gap,table.cb td.gap{width:4px;padding:0 !important;background:#b0b0b0 !important;border:none;}
+  table.cb tbody tr:nth-child(even) td:not(.gap){background:#faf8ee;}
+  table.cb td.dtl{text-align:start;}
+  table.cb td.amt{font-weight:700;}
+  table.cb tr.sum td:not(.gap){background:#f4efd8 !important;font-weight:800;border-top:.7px solid #a8a8a8;}
+  table.cb tr.sum td.lbl{text-align:start;color:#2a2116;}
+  table.cb tr.sum.last td:not(.gap){background:#e6dfba !important;color:#222;border-top:1.2px solid #8c8c8c;}
+  .reg-tag{display:inline-block;margin-inline-start:3px;padding:0 5px;border-radius:8px;font-size:8px;font-weight:700;line-height:1.5;white-space:nowrap;}
+  .reg-tag.stk{background:#eef5fd;color:#12467e;border:.6px solid #9fbfe0;}
+  .reg-tag.prp{background:#f5eefc;color:#5b2a8c;border:.6px solid #c5a9e6;}
+`;
+function cashBookDenseHtml(month){
+  const incomeRows = cashBookIncomeRows(month);
+  const totalIncome = incomeRows.reduce((a,r)=>a+r.amount,0);
+  const expenseRows = DB.expenses.filter(e=>e.month===month).sort((a,b)=>a.date.localeCompare(b.date));
+  const totalExpense = expenseRows.reduce((a,e)=>a+e.amount,0);
+  const monthsBefore = localAllMonths().filter(m=>m<month);
+  const opening = monthsBefore.length ? cashRunningBalance(monthsBefore[monthsBefore.length-1]) : (parseFloat(DB.cashOpeningBalance)||0);
+  const balance = opening + totalIncome - totalExpense;
+  const n = Math.max(incomeRows.length, expenseRows.length, 1);
+  let body='';
+  for(let i=0;i<n;i++){
+    const r=incomeRows[i], e=expenseRows[i];
+    const inc = r ? `<td>${r.date?fmtDMY(r.date):'-'}</td><td>${r.head}</td><td class="dtl">${r.text||'-'}</td><td class="amt">${fmtNum(r.amount)}</td>` : '<td>&nbsp;</td><td></td><td></td><td></td>';
+    let exp='<td></td><td></td><td></td><td></td><td></td>';
+    if(e){ const h=DB.expenseHeads.find(x=>x.id===e.headId); exp=`<td>${fmtDMY(e.date)}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td class="dtl">${e.detail||'-'}${regTagHtml(e)}</td><td class="amt">${fmtNum(e.amount)}</td>`; }
+    body+=`<tr>${inc}<td class="gap"></td>${exp}</tr>`;
+  }
+  const sum=(label,val,last)=>`<tr class="sum${last?' last':''}"><td colspan="3" class="lbl">${label}</td><td class="amt">${fmtNum(val)}</td><td class="gap"></td><td colspan="5"></td></tr>`;
+  body+=sum(t('ابتدائی بیلنس (اس ماہ کے آغاز پر)','Opening balance (start of month)'),opening);
+  body+=sum(t('کل آمد','Total income'),totalIncome);
+  body+=sum(t('خرچ','Expense'),totalExpense);
+  body+=sum(t('بقایا بیلنس','Remaining balance'),balance,true);
+  const cg='<colgroup><col style="width:8.5%"><col style="width:11%"><col style="width:18%"><col style="width:9%"><col style="width:.5%"><col style="width:8.5%"><col style="width:6%"><col style="width:11%"><col style="width:18%"><col style="width:9.5%"></colgroup>';
+  return `<table class="cb">${cg}<thead>
+    <tr class="grp"><th colspan="4">${t('آمد','Income')}</th><th class="gap"></th><th colspan="5">${t('خرچ','Expense')}</th></tr>
+    <tr><th>${t('تاریخ','Date')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th><th class="gap"></th><th>${t('تاریخ','Date')}</th><th>${t('بل نمبر','Bill No.')}</th><th>${t('مد','Category')}</th><th>${t('تفصیل','Detail')}</th><th>${t('رقم','Amount')}</th></tr>
+  </thead><tbody>${body}</tbody></table>`;
+}
 function printCashBook(){
-  printReport(t('کیش بک','Cash Book')+' — '+monthLabel(localSelectedMonth,LANG), cashBookMonthHtml(localSelectedMonth));
+  const month=localSelectedMonth;
+  const title=t('کیش بک','Cash Book')+' — '+monthLabel(month,LANG);
+  const org=(DB.orgName||'').trim();
+  const head=`<div class="cb-head"><div class="cb-org">${kEsc(org)}</div><div class="cb-title">${title}</div><div class="cb-date">${new Date().toLocaleString(LANG==='ur'?'ur':'en-US')}</div></div>`;
+  const rows=DB.expenses.filter(e=>e.month===month).map(e=>(e.detail||'').length).concat(cashBookIncomeRows(month).map(r=>(r.text||'').length));
+  const avg=rows.length?rows.reduce((a,b)=>a+b,0)/rows.length:0;
+  executePrint(title, cashBookDenseHtml(month), {orientation: avg<=24?'portrait':'landscape', margin:'6mm', extraCss:CB_PRINT_CSS, customHead:head});
 }
 function shareCashBook(){
   const incomeRows = cashBookIncomeRows(localSelectedMonth);
@@ -6051,7 +6155,7 @@ function renderExpenseEntries(){
   const rows = expEntriesPageInfo.items.map((e,i)=>{
     const h = DB.expenseHeads.find(x=>x.id===e.headId);
     const lateBadge = e.lateEntry ? ` <span class="late-badge">⏱ ${t('لیٹ','Late')}</span>` : '';
-    return `<tr><td>${(expEntriesPageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${lateBadge}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}</td><td><b>${fmtNum(e.amount)}</b></td><td>${localRowActions('editExpense','deleteExpense',e.id)}</td></tr>`;
+    return `<tr><td>${(expEntriesPageInfo.page-1)*LOCAL_LIST_PAGE_SIZE+i+1}</td><td>${e.date}${lateBadge}</td><td>${kEsc(e.billNo||'-')}</td><td>${h?(LANG==='ur'?h.ur:h.en):'-'}</td><td style="white-space:normal;text-align:${LANG==='ur'?'right':'left'}">${e.detail||'-'}${regTagHtml(e)}</td><td><b>${fmtNum(e.amount)}</b></td><td>${localRowActions('editExpense','deleteExpense',e.id)}</td></tr>`;
   }).join('');
   const total = monthExpenses.reduce((a,e)=>a+e.amount,0);
 
@@ -6101,22 +6205,47 @@ function openExpenseModal(editId){
   expenseDraft = ex
     ? {date:ex.date, billNo:ex.billNo||'', headId:ex.headId, detail:ex.detail||'', amount:String(ex.amount), editId:ex.id}
     : {date:todayStr(), billNo:'', headId: DB.expenseHeads[0]?DB.expenseHeads[0].id:'', detail:'', amount:'', editId:null};
+  const stk = (ex && ex.regStockId) ? (DB.stockRegister||[]).find(x=>x.id===ex.regStockId) : null;
+  const prp = (ex && ex.regPropId) ? (DB.propertyRegister||[]).find(x=>x.id===ex.regPropId) : null;
   const headOptions = DB.expenseHeads.map(h=>`<option value="${h.id}" ${h.id===expenseDraft.headId?'selected':''}>${LANG==='ur'?h.ur:h.en}</option>`).join('');
   showModal(`
+    <div class="cmp-form">
     <h3>${ex ? t('خرچ میں ترمیم کریں','Edit Expense Entry') : t('نیا خرچ درج کریں','New Expense Entry')}</h3>
-    <div class="row2">
-      <div><label>${t('تاریخ','Date')}</label><input type="date" id="expDate" value="${expenseDraft.date}" onchange="expenseDraft.date=this.value"></div>
-      <div><label>${t('بل نمبر','Bill No.')}</label><input type="text" id="expBillNo" value="${kEsc(expenseDraft.billNo)}" onchange="expenseDraft.billNo=this.value"></div>
+    <div class="g2">
+      <div><label>${t('تاریخ','Date')}</label><input type="date" id="expDate" value="${expenseDraft.date}"></div>
+      <div><label>${t('بل نمبر','Bill No.')}</label><input type="text" id="expBillNo" value="${kEsc(expenseDraft.billNo)}"></div>
     </div>
-    <label>${t('مدوار اخراجات (کیٹیگری)','Expense Category')}</label>
-    <select id="expHead" onchange="expenseDraft.headId=this.value">${headOptions}</select>
-    <label>${t('تفصیل','Detail')}</label>
-    <input type="text" id="expDetail" value="${kEsc(expenseDraft.detail)}" onchange="expenseDraft.detail=this.value">
-    <label>${t('بل رقم','Bill Amount')}</label>
-    <input type="number" min="0" id="expAmount" value="${expenseDraft.amount}" onchange="expenseDraft.amount=this.value">
+    <div class="exp-cat-row" style="margin-top:6px;">
+      <div><label>${t('مدوار اخراجات (کیٹیگری)','Expense Category')}</label><select id="expHead">${headOptions}</select></div>
+      <label class="reg-chip" title="${t('اختیاری: سیدھا سٹاک رجسٹر میں درج ہوگا','Optional: also goes into the Stock Register')}"><input type="checkbox" id="expStkOn" ${stk?'checked':''} onchange="toggleRegBox('expStkBox',this.checked)"><span>📦 ${t('سٹاک رجسٹر','Stock Reg.')}</span></label>
+      <label class="reg-chip" title="${t('اختیاری: سیدھا رجسٹر جائیداد میں درج ہوگا','Optional: also goes into the Property Register')}"><input type="checkbox" id="expPrpOn" ${prp?'checked':''} onchange="toggleRegBox('expPrpBox',this.checked)"><span>🏛 ${t('رجسٹر جائیداد','Property Reg.')}</span></label>
+    </div>
+    <div class="reg-box" id="expStkBox" style="display:${stk?'block':'none'};">
+      <div class="rb-t">📦 ${t('سٹاک رجسٹر — وصول شدہ سامان (قیمت = بل رقم)','Stock Register — received item (price = bill amount)')}</div>
+      <div class="g3">
+        <div><label>${t('سامان کا نام','Item')}</label><input type="text" id="expStkName" value="${kEsc(stk?stk.name:'')}" placeholder="${t('خالی ہو تو تفصیل','blank = detail')}"></div>
+        <div><label>${t('وصول شدہ مقدار','Qty received')}</label><input type="number" min="0" id="expStkQty" value="${stk?stk.received:''}"></div>
+        <div><label>${t('دستخط','Signature')}</label><input type="text" id="expStkSign" value="${kEsc(stk?stk.sign||'':'')}"></div>
+      </div>
+    </div>
+    <div class="reg-box" id="expPrpBox" style="display:${prp?'block':'none'};">
+      <div class="rb-t">🏛 ${t('رجسٹر جائیداد — خریدی گئی جائیداد (کل قیمت = بل رقم)','Property Register — purchased asset (total = bill amount)')}</div>
+      <div class="g4">
+        <div><label>${t('جائیداد کا نام','Asset')}</label><input type="text" id="expPrpName" value="${kEsc(prp?prp.name:'')}" placeholder="${t('خالی ہو تو تفصیل','blank = detail')}"></div>
+        <div><label>${t('تعداد','Qty')}</label><input type="text" id="expPrpQty" value="${kEsc(prp?String(prp.qty):'')}"></div>
+        <div><label>${t('مقام','Place')}</label><input type="text" id="expPrpPlace" value="${kEsc(prp?prp.place||'':'')}"></div>
+        <div><label>${t('شناختی نمبر','ID No.')}</label><input type="text" id="expPrpId" value="${kEsc(prp?prp.idNo||'':'')}"></div>
+      </div>
+    </div>
+    <div class="g2" style="margin-top:6px;">
+      <div><label>${t('تفصیل','Detail')}</label><input type="text" id="expDetail" value="${kEsc(expenseDraft.detail)}"></div>
+      <div><label>${t('بل رقم','Bill Amount')}</label><input type="number" min="0" id="expAmount" value="${expenseDraft.amount}"></div>
+    </div>
     <button class="btn block" onclick="saveExpense()">${t('محفوظ کریں','Save')}</button>
+    </div>
   `);
 }
+function toggleRegBox(id,on){ const el=document.getElementById(id); if(el) el.style.display = on?'block':'none'; }
 function editExpense(id){
   const ex0 = DB.expenses.find(x=>x.id===id);
   if(!ex0) return;
@@ -6124,9 +6253,30 @@ function editExpense(id){
   requireEditPin(()=>openExpenseModal(id));
 }
 function saveExpense(){
+  const val=(id,d)=>{ const el=document.getElementById(id); return el ? el.value : (d==null?'':d); };
+  expenseDraft.date = val('expDate', expenseDraft.date) || expenseDraft.date;
+  expenseDraft.billNo = val('expBillNo', expenseDraft.billNo);
+  expenseDraft.headId = val('expHead', expenseDraft.headId);
+  expenseDraft.detail = val('expDetail', expenseDraft.detail);
+  expenseDraft.amount = val('expAmount', expenseDraft.amount);
   const amount = parseFloat(expenseDraft.amount);
   if(!expenseDraft.headId){ alert(t('براہ کرم مدوار اخراجات منتخب کریں','Please select an expense category')); return; }
   if(!amount || amount<=0){ alert(t('براہ کرم بل رقم درج کریں','Please enter the bill amount')); return; }
+  const stkOn = !!(document.getElementById('expStkOn')||{}).checked;
+  const prpOn = !!(document.getElementById('expPrpOn')||{}).checked;
+  let stk=null, prp=null;
+  if(stkOn){
+    const qty=parseFloat(val('expStkQty')); const name=(val('expStkName')||expenseDraft.detail||'').trim();
+    if(!name){ alert(t('سٹاک رجسٹر کے لیے سامان کا نام یا تفصیل درج کریں','Enter the item name (or detail) for the Stock Register')); return; }
+    if(!qty||qty<=0){ alert(t('سٹاک رجسٹر کے لیے وصول شدہ مقدار درج کریں','Enter the received quantity for the Stock Register')); return; }
+    stk={name, qty, sign:val('expStkSign').trim()};
+  }
+  if(prpOn){
+    const qty=val('expPrpQty').trim(); const name=(val('expPrpName')||expenseDraft.detail||'').trim();
+    if(!name){ alert(t('رجسٹر جائیداد کے لیے جائیداد کا نام یا تفصیل درج کریں','Enter the asset name (or detail) for the Property Register')); return; }
+    if(!qty){ alert(t('رجسٹر جائیداد کے لیے تعداد درج کریں','Enter the quantity for the Property Register')); return; }
+    prp={name, qty, place:val('expPrpPlace').trim(), idNo:val('expPrpId').trim()};
+  }
   const monthRes = resolveExpenseMonth(expenseDraft.date);
   if(!monthRes){ alert(t('لوکل خرچ کے تمام ماہ بند ہیں — پہلے کسی ماہ کو دوبارہ کھولیں۔','All Local Kharch months are closed — please reopen a month first.')); return; }
   if(monthRes.lateEntry){
@@ -6136,19 +6286,36 @@ function saveExpense(){
     ));
     if(!ok) return;
   }
-  const exOld = expenseDraft.editId ? DB.expenses.find(x=>x.id===expenseDraft.editId) : null;
-  if(exOld){
-    Object.assign(exOld, {date:expenseDraft.date, month:monthRes.month, originalMonth:toMonth(expenseDraft.date), lateEntry:monthRes.lateEntry, billNo:expenseDraft.billNo, headId:expenseDraft.headId, detail:expenseDraft.detail, amount});
-  } else {
-    DB.expenses.push({id:uid('ex'), date:expenseDraft.date, month:monthRes.month, originalMonth:toMonth(expenseDraft.date), lateEntry:monthRes.lateEntry, billNo:expenseDraft.billNo, headId:expenseDraft.headId, detail:expenseDraft.detail, amount});
-  }
+  let rec = expenseDraft.editId ? DB.expenses.find(x=>x.id===expenseDraft.editId) : null;
+  const base = {date:expenseDraft.date, month:monthRes.month, originalMonth:toMonth(expenseDraft.date), lateEntry:monthRes.lateEntry, billNo:expenseDraft.billNo, headId:expenseDraft.headId, detail:expenseDraft.detail, amount};
+  if(rec){ Object.assign(rec, base); }
+  else { rec = Object.assign({id:uid('ex')}, base); DB.expenses.push(rec); }
+  /* optional direct filing into the registers */
+  if(!DB.stockRegister) DB.stockRegister=[];
+  if(!DB.propertyRegister) DB.propertyRegister=[];
+  const kaif = expenseDraft.billNo ? (t('بل نمبر ','Bill No. ')+expenseDraft.billNo) : '';
+  const sOld = rec.regStockId ? DB.stockRegister.find(x=>x.id===rec.regStockId) : null;
+  if(stk){
+    if(sOld){ Object.assign(sOld,{date:expenseDraft.date,name:stk.name,received:stk.qty,price:amount,sign:stk.sign}); }
+    else { const s={id:uid('stk'),date:expenseDraft.date,name:stk.name,received:stk.qty,issued:0,price:amount,sign:stk.sign,kaif}; DB.stockRegister.push(s); rec.regStockId=s.id; }
+  } else if(rec.regStockId){ DB.stockRegister=DB.stockRegister.filter(x=>x.id!==rec.regStockId); delete rec.regStockId; }
+  const pOld = rec.regPropId ? DB.propertyRegister.find(x=>x.id===rec.regPropId) : null;
+  if(prp){
+    const qn=numFromText(prp.qty); const unit = Math.round((amount/((isNaN(qn)||qn<=0)?1:qn))*100)/100;
+    if(pOld){ Object.assign(pOld,{date:expenseDraft.date,name:prp.name,qty:prp.qty,unitPrice:unit,place:prp.place,idNo:prp.idNo}); }
+    else { const p={id:uid('prp'),name:prp.name,qty:prp.qty,date:expenseDraft.date,unitPrice:unit,place:prp.place,idNo:prp.idNo,kaif}; DB.propertyRegister.push(p); rec.regPropId=p.id; }
+  } else if(rec.regPropId){ DB.propertyRegister=DB.propertyRegister.filter(x=>x.id!==rec.regPropId); delete rec.regPropId; }
   saveDB(); localSelectedMonth = monthRes.month; closeModal(); render();
 }
 function deleteExpense(id){
   const ex0 = DB.expenses.find(x=>x.id===id);
   if(ex0 && isLocalMonthClosed(ex0.month)){ alert(t('یہ ماہ بند ہے — پہلے ماہ دوبارہ کھولیں۔','This month is closed — reopen it first.')); return; }
   requireEditPin(()=>{
-    if(!confirm(t('کیا آپ واقعی یہ خرچ حذف کرنا چاہتے ہیں؟','Delete this expense entry?'))) return;
+    const linked = !!(ex0 && (ex0.regStockId||ex0.regPropId));
+    const msg = linked ? t('کیا آپ واقعی یہ خرچ حذف کرنا چاہتے ہیں؟ اس سے جڑا سٹاک/جائیداد رجسٹر کا اندراج بھی حذف ہو جائے گا۔','Delete this expense? Its linked Stock/Property Register entry will be deleted too.') : t('کیا آپ واقعی یہ خرچ حذف کرنا چاہتے ہیں؟','Delete this expense entry?');
+    if(!confirm(msg)) return;
+    if(ex0 && ex0.regStockId) DB.stockRegister = (DB.stockRegister||[]).filter(x=>x.id!==ex0.regStockId);
+    if(ex0 && ex0.regPropId) DB.propertyRegister = (DB.propertyRegister||[]).filter(x=>x.id!==ex0.regPropId);
     DB.expenses = DB.expenses.filter(e=>e.id!==id);
     saveDB(); render();
   });
@@ -7935,6 +8102,202 @@ function registerServiceWorker(){
 }
 registerServiceWorker();
 
+/* ============ STOCK REGISTER (سٹاک رجسٹر) & PROPERTY REGISTER (رجسٹر جائیداد) ============ */
+function localViews(){ return [['cashbook',t('کیش بک','Cash Book')],['income',t('مدوار آمد','Category-wise Income')],['expenses',t('مدوار اخراجات','Category-wise Expenses')]]; }
+function regTagHtml(e){
+  let s='';
+  if(e.regStockId && (DB.stockRegister||[]).some(x=>x.id===e.regStockId)) s+=`<span class="reg-tag stk" title="${t('سٹاک رجسٹر میں درج ہے','Filed in the Stock Register')}">📦 ${t('سٹاک','Stock')}</span>`;
+  if(e.regPropId && (DB.propertyRegister||[]).some(x=>x.id===e.regPropId)) s+=`<span class="reg-tag prp" title="${t('رجسٹر جائیداد میں درج ہے','Filed in the Property Register')}">🏛 ${t('جائیداد','Property')}</span>`;
+  return s;
+}
+function numFromText(s){ s=String(s==null?'':s).replace(/[\u06F0-\u06F9]/g,d=>d.charCodeAt(0)-0x06F0).replace(/[\u0660-\u0669]/g,d=>d.charCodeAt(0)-0x0660); const m=/-?\d+(?:[.,]\d+)?/.exec(s); return m?parseFloat(m[0].replace(',','.')):NaN; }
+function propTotalOf(e){ const n=numFromText(e.qty); const q=(isNaN(n)||n<=0)?1:n; return Math.round(q*(parseFloat(e.unitPrice)||0)*100)/100; }
+function fmtDMY(s){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m ? m[3]+'-'+m[2]+'-'+m[1] : (s||'-'); }
+const REG_PRINT_SVG = '<svg class="pr-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#12315c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3.5h10V9"/><rect x="3" y="9" width="18" height="9" rx="2" fill="#7fb0ea"/><rect x="7" y="14" width="10" height="7" rx="1" fill="#fff"/><circle cx="17.2" cy="12" r=".8" fill="#12315c" stroke="none"/></svg>';
+function regBar(kind){
+  const S = kind==='stock';
+  return `<div class="roz-bar lk-bar">
+    <button class="ib c-green" data-s="${t('اندراج','Add')}" title="${S?t('نیا اندراج — سٹاک رجسٹر','New entry — Stock Register'):t('نیا اندراج — رجسٹر جائیداد','New entry — Property Register')}" onclick="${S?'openStockModal()':'openPropModal()'}">＋</button>
+    <button class="ib c-blue" data-s="${t('پرنٹ','Print')}" title="${t('پرنٹ','Print')}" onclick="${S?'printStock()':'printProp()'}">${REG_PRINT_SVG}</button>
+    <button class="ib c-green" data-s="${t('شیئر','Share')}" title="${t('شیئر','Share')}" onclick="${S?'shareStock()':'shareProp()'}">📤</button>
+  </div>`;
+}
+function regTiles(items){ return `<div class="k-tiles">${items.map((x,i)=>`<div class="k-tile ${i===items.length-1?'main':''}"><div class="n">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('')}</div>`; }
+function regDel(arr,id){ return (DB[arr]||[]).filter(x=>x.id!==id); }
+
+/* ---- Stock Register ---- */
+function stockCalc(){
+  const list=(DB.stockRegister||[]).map((e,i)=>({e,i})).sort((a,b)=>(a.e.date||'').localeCompare(b.e.date||'')||a.i-b.i);
+  const bal={};
+  return list.map(({e})=>{ const k=(e.name||'').trim(); bal[k]=(bal[k]||0)+(parseFloat(e.received)||0)-(parseFloat(e.issued)||0); return Object.assign({},e,{balance:bal[k]}); });
+}
+function stockTotals(rows){
+  const fin={}; rows.forEach(r=>{ fin[(r.name||'').trim()]=r.balance; });
+  return {rec:rows.reduce((a,r)=>a+(parseFloat(r.received)||0),0), iss:rows.reduce((a,r)=>a+(parseFloat(r.issued)||0),0), rem:Object.values(fin).reduce((a,b)=>a+b,0), val:rows.reduce((a,r)=>a+(parseFloat(r.price)||0),0)};
+}
+function stockTableHtml(rows, forPrint){
+  const T=stockTotals(rows);
+  const head=`<thead><tr><th>${t('نمبر شمار','No.')}</th><th>${t('تاریخ','Date')}</th><th>${t('سامان کا نام','Item')}</th><th>${t('وصول شدہ مقدار','Received')}</th><th>${t('جاری شدہ مقدار','Issued')}</th><th>${t('باقی مقدار','Balance')}</th><th>${t('قیمت','Price')}</th><th>${t('دستخط','Signature')}</th><th>${t('کیفیت','Remarks')}</th>${forPrint?'':'<th></th>'}</tr></thead>`;
+  const body=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${fmtDMY(r.date)}</td><td class="nm">${kEsc(r.name)}</td><td>${fmtNum(parseFloat(r.received)||0)}</td><td>${fmtNum(parseFloat(r.issued)||0)}</td><td class="${r.balance<=0?'low':'ok'}"><b>${fmtNum(r.balance)}</b></td><td>${fmtNum(parseFloat(r.price)||0)}</td>${sigCellHtml(r,forPrint)}<td>${kEsc(r.kaif||'')}</td>${forPrint?'':`<td class="act">${localRowActions('editStock','deleteStock',r.id)}</td>`}</tr>`).join('');
+  const tot=`<tr class="total-row"><td colspan="3">${t('میزان','Total')}</td><td>${fmtNum(T.rec)}</td><td>${fmtNum(T.iss)}</td><td>${fmtNum(T.rem)}</td><td>${fmtNum(T.val)}</td><td colspan="${forPrint?2:3}"></td></tr>`;
+  return `<table class="${forPrint?'':'ledger reg'}">${head}<tbody>${body}${tot}</tbody></table>`;
+}
+function renderStockRegister(){
+  const rows=stockCalc(); const T=stockTotals(rows);
+  const table = rows.length ? `<div class="tbl-wrap">${stockTableHtml(rows,false)}</div>` : `<div class="empty"><span class="big">📦</span>${t('ابھی کوئی اندراج نہیں — اوپر ＋ دبائیں','No entries yet — press ＋ above')}</div>`;
+  return `<div class="card">${regBar('stock')}
+    ${regTiles([[t('اندراجات','Entries'),rows.length],[t('کل وصول','Received'),fmtNum(T.rec)],[t('کل جاری','Issued'),fmtNum(T.iss)],[t('باقی مقدار','Balance'),fmtNum(T.rem)]])}
+    <div class="lk-sec">${t('سٹاک رجسٹر','Stock Register')}</div>${table}</div>`;
+}
+
+function sigCellHtml(r,forPrint){
+  const inner = r.signImg ? `<img src="${r.signImg}" alt="" style="height:20px;max-width:100%;vertical-align:middle;">` : (r.sign ? kEsc(r.sign) : '');
+  if(forPrint) return `<td>${inner}</td>`;
+  return `<td class="sigcell" title="${t('دستخط کے لیے کلک کریں','Click to sign')}" onclick="openSignPad('${r.id}')">${inner || '<span class="sig-ph">✍</span>'}</td>`;
+}
+let signPadId=null, signDrawing=false, signDirty=false;
+function openSignPad(id){
+  const e=(DB.stockRegister||[]).find(x=>x.id===id); if(!e) return;
+  signPadId=id;
+  const ob='background:transparent;color:var(--cover-green);border:1.5px solid var(--cover-green);';
+  showModal(`<div class="cmp-form">
+    <h3>✍ ${t('دستخط','Signature')} — ${kEsc(e.name)}</h3>
+    <canvas id="signCv" width="520" height="170" style="width:100%;height:auto;aspect-ratio:520/170;border:1.5px dashed var(--gold);border-radius:10px;background:#fffdf6;touch-action:none;cursor:crosshair;display:block;"></canvas>
+    <div class="g3" style="margin-top:10px;">
+      <button class="btn block" style="margin-top:0" onclick="saveSignPad()">${t('محفوظ','Save')}</button>
+      <button class="btn block" style="margin-top:0;${ob}" onclick="clearSignPad()">${t('صاف','Clear')}</button>
+      <button class="btn block" style="margin-top:0;${ob}" onclick="closeModal()">${t('منسوخ','Cancel')}</button>
+    </div></div>`);
+  const cv=document.getElementById('signCv'), ctx=cv.getContext('2d');
+  ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#0b2a6b';
+  signDirty=false; signDrawing=false;
+  if(e.signImg){ const im=new Image(); im.onload=()=>{ ctx.drawImage(im,0,0,cv.width,cv.height); signDirty=true; }; im.src=e.signImg; }
+  const pos=ev=>{ const r=cv.getBoundingClientRect(); return {x:(ev.clientX-r.left)*cv.width/r.width, y:(ev.clientY-r.top)*cv.height/r.height}; };
+  cv.addEventListener('pointerdown',ev=>{ ev.preventDefault(); try{cv.setPointerCapture(ev.pointerId);}catch(_){} signDrawing=true; signDirty=true; const p=pos(ev); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+0.01,p.y); ctx.stroke(); });
+  cv.addEventListener('pointermove',ev=>{ if(!signDrawing) return; ev.preventDefault(); const p=pos(ev); ctx.lineTo(p.x,p.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y); });
+  ['pointerup','pointercancel','pointerleave'].forEach(n=>cv.addEventListener(n,()=>{ signDrawing=false; }));
+}
+function clearSignPad(){ const cv=document.getElementById('signCv'); if(!cv) return; cv.getContext('2d').clearRect(0,0,cv.width,cv.height); signDirty=false; }
+function saveSignPad(){
+  const e=(DB.stockRegister||[]).find(x=>x.id===signPadId); const cv=document.getElementById('signCv');
+  if(!e||!cv) return;
+  if(signDirty) e.signImg=cv.toDataURL('image/png'); else delete e.signImg;
+  saveDB(); closeModal(); render();
+}
+let stockEditId=null;
+function openStockModal(id){
+  const e = id ? (DB.stockRegister||[]).find(x=>x.id===id) : null;
+  stockEditId = e ? e.id : null;
+  const names=[...new Set((DB.stockRegister||[]).map(x=>x.name).filter(Boolean))];
+  showModal(`<div class="cmp-form">
+    <h3>📦 ${e?t('سٹاک اندراج میں ترمیم','Edit Stock Entry'):t('نیا سٹاک اندراج','New Stock Entry')}</h3>
+    <div class="g2"><div><label>${t('تاریخ','Date')}</label><input type="date" id="stkDate" value="${e?e.date:todayStr()}"></div>
+    <div><label>${t('سامان کا نام','Item')}</label><input type="text" id="stkName" list="stkNames" value="${kEsc(e?e.name:'')}"><datalist id="stkNames">${names.map(n=>`<option value="${kEsc(n)}">`).join('')}</datalist></div></div>
+    <div class="g3"><div><label>${t('وصول شدہ مقدار','Received')}</label><input type="number" min="0" id="stkRec" value="${e&&e.received!==''?e.received:''}"></div>
+    <div><label>${t('جاری شدہ مقدار','Issued')}</label><input type="number" min="0" id="stkIss" value="${e&&e.issued!==''?e.issued:''}"></div>
+    <div><label>${t('قیمت','Price')}</label><input type="number" min="0" id="stkPrice" value="${e&&e.price!==''?e.price:''}"></div></div>
+    <div class="g2"><div><label>${t('دستخط','Signature')}</label><input type="text" id="stkSign" value="${kEsc(e?e.sign||'':'')}"></div>
+    <div><label>${t('کیفیت','Remarks')}</label><input type="text" id="stkKaif" value="${kEsc(e?e.kaif||'':'')}"></div></div>
+    <button class="btn block" onclick="saveStock()">${t('محفوظ کریں','Save')}</button></div>`);
+}
+function saveStock(){
+  const g=id=>document.getElementById(id).value;
+  const name=g('stkName').trim(), rec=parseFloat(g('stkRec'))||0, iss=parseFloat(g('stkIss'))||0;
+  if(!name){ alert(t('سامان کا نام درج کریں','Enter the item name')); return; }
+  if(rec<=0 && iss<=0){ alert(t('وصول یا جاری مقدار درج کریں','Enter a received or issued quantity')); return; }
+  const data={date:g('stkDate')||todayStr(), name, received:rec, issued:iss, price:parseFloat(g('stkPrice'))||0, sign:g('stkSign').trim(), kaif:g('stkKaif').trim()};
+  if(!DB.stockRegister) DB.stockRegister=[];
+  const old = stockEditId ? DB.stockRegister.find(x=>x.id===stockEditId) : null;
+  if(old) Object.assign(old,data); else DB.stockRegister.push(Object.assign({id:uid('stk')},data));
+  saveDB(); closeModal(); render();
+}
+function editStock(id){ requireEditPin(()=>openStockModal(id)); }
+function deleteStock(id){
+  requireEditPin(()=>{
+    if(!confirm(t('کیا آپ واقعی یہ اندراج حذف کرنا چاہتے ہیں؟','Delete this entry?'))) return;
+    DB.stockRegister = regDel('stockRegister',id);
+    DB.expenses.forEach(e=>{ if(e.regStockId===id) delete e.regStockId; });
+    saveDB(); render();
+  });
+}
+function printStock(){ printReport(t('سٹاک رجسٹر','Stock Register'), stockTableHtml(stockCalc(),true)); }
+function shareStock(){
+  const rows=stockCalc(); const T=stockTotals(rows);
+  let text=`${t('سٹاک رجسٹر','Stock Register')}\n\n`;
+  rows.forEach((r,i)=>{ text+=`${i+1}. ${fmtDMY(r.date)} — ${r.name} | ${t('وصول','In')}: ${fmtNum(+r.received||0)} | ${t('جاری','Out')}: ${fmtNum(+r.issued||0)} | ${t('باقی','Bal')}: ${fmtNum(r.balance)} | ${t('قیمت','Price')}: ${fmtNum(+r.price||0)}${r.sign?' | '+r.sign:''}\n`; });
+  text+=`\n${t('کل وصول','Received')}: ${fmtNum(T.rec)} — ${t('کل جاری','Issued')}: ${fmtNum(T.iss)} — ${t('باقی','Balance')}: ${fmtNum(T.rem)}`;
+  shareReport(t('سٹاک رجسٹر','Stock Register'), text);
+}
+
+/* ---- Property Register ---- */
+function propRows(){ return (DB.propertyRegister||[]).map((e,i)=>({e,i})).sort((a,b)=>(a.e.date||'').localeCompare(b.e.date||'')||a.i-b.i).map(x=>Object.assign({},x.e,{total:propTotalOf(x.e)})); }
+function propTableHtml(rows, forPrint){
+  const qty=rows.reduce((a,r)=>{const n=numFromText(r.qty);return a+(isNaN(n)?0:n);},0), tv=rows.reduce((a,r)=>a+r.total,0);
+  const head=`<thead><tr><th>${t('نمبر شمار','No.')}</th><th>${t('جائیداد کا نام','Asset')}</th><th>${t('تعداد','Qty')}</th><th>${t('خریداری کی تاریخ','Purchase date')}</th><th>${t('قیمت فی عدد','Unit price')}</th><th>${t('کل قیمت','Total')}</th><th>${t('مقام','Place')}</th><th>${t('شناختی نمبر','ID No.')}</th><th>${t('کیفیت','Remarks')}</th>${forPrint?'':'<th></th>'}</tr></thead>`;
+  const body=rows.map((r,i)=>`<tr><td>${i+1}</td><td class="nm">${kEsc(r.name)}</td><td>${kEsc(String(r.qty))}</td><td>${fmtDMY(r.date)}</td><td>${fmtNum(parseFloat(r.unitPrice)||0)}</td><td><b>${fmtNum(r.total)}</b></td><td>${kEsc(r.place||'')}</td><td>${kEsc(r.idNo||'')}</td><td>${kEsc(r.kaif||'')}</td>${forPrint?'':`<td class="act">${localRowActions('editProp','deleteProp',r.id)}</td>`}</tr>`).join('');
+  const tot=`<tr class="total-row"><td colspan="2">${t('میزان','Total')}</td><td>${fmtNum(qty)}</td><td></td><td></td><td>${fmtNum(tv)}</td><td colspan="${forPrint?3:4}"></td></tr>`;
+  return `<table class="${forPrint?'':'ledger reg'}">${head}<tbody>${body}${tot}</tbody></table>`;
+}
+function renderPropertyRegister(){
+  const rows=propRows();
+  const qty=rows.reduce((a,r)=>{const n=numFromText(r.qty);return a+(isNaN(n)?0:n);},0), tv=rows.reduce((a,r)=>a+r.total,0);
+  const table = rows.length ? `<div class="tbl-wrap">${propTableHtml(rows,false)}</div>` : `<div class="empty"><span class="big">🏛</span>${t('ابھی کوئی اندراج نہیں — اوپر ＋ دبائیں','No entries yet — press ＋ above')}</div>`;
+  return `<div class="card">${regBar('property')}
+    ${regTiles([[t('اندراجات','Entries'),rows.length],[t('کل تعداد','Total qty'),fmtNum(qty)],[t('کل قیمت','Total value'),fmtNum(tv)]])}
+    <div class="lk-sec">${t('رجسٹر جائیداد','Property Register')}</div>${table}
+    <div class="reg-sign"><span>${t('دستخط سیکرٹری جائیداد','Secretary Property — Signature')}</span></div></div>`;
+}
+let propEditId=null;
+function propLiveTotal(){ document.getElementById('prpTot').textContent=fmtNum(propTotalOf({qty:document.getElementById('prpQty').value, unitPrice:document.getElementById('prpUnit').value})); }
+function openPropModal(id){
+  const e = id ? (DB.propertyRegister||[]).find(x=>x.id===id) : null;
+  propEditId = e ? e.id : null;
+  const places=[...new Set((DB.propertyRegister||[]).map(x=>x.place).filter(Boolean))];
+  const tot = e ? propTotalOf(e) : 0;
+  showModal(`<div class="cmp-form">
+    <h3>🏛 ${e?t('جائیداد اندراج میں ترمیم','Edit Property Entry'):t('نیا جائیداد اندراج','New Property Entry')}</h3>
+    <div class="g2"><div><label>${t('جائیداد کا نام','Asset')}</label><input type="text" id="prpName" value="${kEsc(e?e.name:'')}"></div>
+    <div><label>${t('خریداری کی تاریخ','Purchase date')}</label><input type="date" id="prpDate" value="${e?e.date:todayStr()}"></div></div>
+    <div class="g3"><div><label>${t('تعداد','Qty')}</label><input type="text" id="prpQty" value="${kEsc(e?String(e.qty):'')}" placeholder="${t('مثلاً 5 یا 5 عدد','e.g. 5 or 5 pcs')}" oninput="propLiveTotal()"></div>
+    <div><label>${t('قیمت فی عدد','Unit price')}</label><input type="number" min="0" id="prpUnit" value="${e?e.unitPrice:''}" oninput="propLiveTotal()"></div>
+    <div><label>${t('کل قیمت (خودکار)','Total (auto)')}</label><div id="prpTot" style="padding:6px 9px;border-radius:8px;background:rgba(184,134,47,.14);font-weight:800;font-size:14px;">${fmtNum(tot)}</div></div></div>
+    <div class="g3"><div><label>${t('مقام','Place')}</label><input type="text" id="prpPlace" list="prpPlaces" value="${kEsc(e?e.place||'':'')}"><datalist id="prpPlaces">${places.map(n=>`<option value="${kEsc(n)}">`).join('')}</datalist></div>
+    <div><label>${t('شناختی نمبر','ID No.')}</label><input type="text" id="prpId" value="${kEsc(e?e.idNo||'':'')}"></div>
+    <div><label>${t('کیفیت','Remarks')}</label><input type="text" id="prpKaif" value="${kEsc(e?e.kaif||'':'')}"></div></div>
+    <button class="btn block" onclick="saveProp()">${t('محفوظ کریں','Save')}</button></div>`);
+}
+function saveProp(){
+  const g=id=>document.getElementById(id).value;
+  const name=g('prpName').trim(), qty=g('prpQty').trim(), unit=parseFloat(g('prpUnit'))||0;
+  if(!name){ alert(t('جائیداد کا نام درج کریں','Enter the asset name')); return; }
+  if(!qty){ alert(t('تعداد درج کریں','Enter the quantity')); return; }
+  const data={name, qty, date:g('prpDate')||todayStr(), unitPrice:unit, place:g('prpPlace').trim(), idNo:g('prpId').trim(), kaif:g('prpKaif').trim()};
+  if(!DB.propertyRegister) DB.propertyRegister=[];
+  const old = propEditId ? DB.propertyRegister.find(x=>x.id===propEditId) : null;
+  if(old) Object.assign(old,data); else DB.propertyRegister.push(Object.assign({id:uid('prp')},data));
+  saveDB(); closeModal(); render();
+}
+function editProp(id){ requireEditPin(()=>openPropModal(id)); }
+function deleteProp(id){
+  requireEditPin(()=>{
+    if(!confirm(t('کیا آپ واقعی یہ اندراج حذف کرنا چاہتے ہیں؟','Delete this entry?'))) return;
+    DB.propertyRegister = regDel('propertyRegister',id);
+    DB.expenses.forEach(e=>{ if(e.regPropId===id) delete e.regPropId; });
+    saveDB(); render();
+  });
+}
+function printProp(){
+  const sig=`<div style="margin-top:46px;display:flex;justify-content:flex-end;"><div style="min-width:210px;text-align:center;border-top:1.5px solid #000;padding-top:4px;font-weight:700;font-size:13px;">${t('دستخط سیکرٹری جائیداد','Secretary Property — Signature')}</div></div>`;
+  printReport(t('رجسٹر جائیداد','Property Register'), propTableHtml(propRows(),true)+sig);
+}
+function shareProp(){
+  const rows=propRows(); const tv=rows.reduce((a,r)=>a+r.total,0);
+  let text=`${t('رجسٹر جائیداد','Property Register')}\n\n`;
+  rows.forEach((r,i)=>{ text+=`${i+1}. ${r.name} × ${r.qty} | ${fmtDMY(r.date)} | ${t('فی عدد','Unit')}: ${fmtNum(+r.unitPrice||0)} | ${t('کل','Total')}: ${fmtNum(r.total)}${r.place?' | '+r.place:''}${r.idNo?' | '+r.idNo:''}\n`; });
+  text+=`\n${t('کل قیمت','Total value')}: ${fmtNum(tv)}\n${t('دستخط سیکرٹری جائیداد','Secretary Property — Signature')}: __________`;
+  shareReport(t('رجسٹر جائیداد','Property Register'), text);
+}
+
 /* ============ MODAL HELPERS ============ */
 function showModal(html){
   let bg = document.getElementById('modalBg');
@@ -8182,7 +8545,9 @@ body.dark #acBox .ac-item:hover,body.dark #acBox .ac-item:active{background:#2f4
   function cur(){
     var a=document.querySelector('#navDDMenu button.active'), c=document.getElementById('navDDCur');
     if(a&&c) c.innerHTML=a.innerHTML;
+    else if(c && typeof TAB!=='undefined'){ var m={heads:['🏷','ہیڈز','Heads'],summary:['📈','سمری','Summary']}[TAB]; if(m) c.innerHTML='<span>'+m[0]+'</span> <span>'+(LANG==='ur'?m[1]:m[2])+'</span>'; }
   }
+  window.syncNavDDLabel=cur;
   window.toggleNavDD=function(e){ if(e) e.stopPropagation(); var n=document.getElementById('navDD'); if(n) n.classList.toggle('open'); };
   window.closeNavDD=function(){ var n=document.getElementById('navDD'); if(n) n.classList.remove('open'); };
   document.addEventListener('click',function(e){ var n=document.getElementById('navDD'); if(n && !n.contains(e.target)) n.classList.remove('open'); });
