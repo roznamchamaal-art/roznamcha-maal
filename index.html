@@ -2563,7 +2563,6 @@ function renderSettingsModal(){ if(!requireAdminRole()) return;
     </details>
 
     <div class="settings-row" style="padding:8px 10px;">
-      <button class="btn outline sm" style="width:100%;justify-content:center;gap:8px;" onclick="closeModal();switchTab('heads')">🏷 ${t('ہیڈز (روزنامچہ / آمد / اخراجات)','Heads (Daybook / Income / Expense)')}</button>
     </div>
 
     <details class="settings-row" data-k="1" ${setOpen(1)} ontoggle="setToggled(this)">
@@ -5265,7 +5264,7 @@ function toggleDefaultersHead(id){
     const idx = defaultersHeadIds.indexOf(id);
     if(idx>=0){ defaultersHeadIds.splice(idx,1); }
     else {
-      if(defaultersHeadIds.length>=4) return;
+      if(defaultersHeadIds.length>=8) return;
       defaultersHeadIds.push(id);
     }
     if(defaultersHeadIds.length===0) defaultersHeadIds = ['all'];
@@ -5331,9 +5330,9 @@ function renderDefaultersModal(){
       <label class="hd-dd-item all"><input type="checkbox" ${allSelected?'checked':''} onchange="toggleDefaultersHead('all')"><span>${t('تمام ہیڈز','All heads')}</span></label>` +
     DB.heads.map(h=>{
       const sel = defaultersHeadIds.includes(h.id);
-      const lock = (!sel && !allSelected && defaultersHeadIds.length>=4);
+      const lock = (!sel && !allSelected && defaultersHeadIds.length>=8);
       return `<label class="hd-dd-item ${lock?'dis':''}"><input type="checkbox" ${sel?'checked':''} ${lock?'disabled':''} onchange="toggleDefaultersHead('${h.id}')"><span>${nmH(h)}</span></label>`;
-    }).join('') + `</div><div class="hd-dd-hint">${t('زیادہ سے زیادہ چار ہیڈز منتخب ہو سکتے ہیں','Up to four heads can be selected')}</div></div></div>`;
+    }).join('') + `</div><div class="hd-dd-hint">${t('زیادہ سے زیادہ آٹھ ہیڈز منتخب ہو سکتے ہیں','Up to eight heads can be selected')}</div></div></div>`;
   const khataOptions = `<option value="all">${t('تمام کھاتہ جات','All accounts')}</option>` + DB.khatas.slice().sort((a,b)=>a.number-b.number).map(k=>`<option value="${k.id}" ${defaultersKhataId===k.id?'selected':''}>${k.number} — ${kEsc(LANG==='ur'?k.name_ur:k.name_en)}</option>`).join('');
   const rangeOn = defaultersRangeActive();
   const rg = defaultersRange();
@@ -5347,7 +5346,7 @@ function renderDefaultersModal(){
     : `<div class="empty">${t('کوئی ڈیٹا نہیں','No data')}</div>`;
   showModal(`
     <h3>${t('فہرست بقایادار','Balance / Defaulters List')} ${fiscalYearBadgeHtml()}</h3>
-    <label>${t('مد — تمام ہیڈز یا زیادہ سے زیادہ چار ہیڈز اکٹھے منتخب کریں (ایک سے زائد منتخب کرنے پر ہر مد کا الگ بقایا کالم دکھایا جائے گا)','Head — select all, or up to four heads together (selecting more than one shows each head\'s own balance column)')}</label>
+    <label>${t('مد — تمام ہیڈز یا زیادہ سے زیادہ آٹھ ہیڈز اکٹھے منتخب کریں (ایک سے زائد منتخب کرنے پر ہر مد کا الگ بقایا کالم دکھایا جائے گا)','Head — select all, or up to eight heads together (selecting more than one shows each head\'s own balance column)')}</label>
     <div class="pill-row" style="flex-wrap:wrap; overflow-x:visible;">${headPills}</div>
     <label style="margin-top:10px;">${t('کھاتہ','Account')}</label>
     <select onchange="defaultersKhataId=this.value; renderDefaultersModal();">${khataOptions}</select>
@@ -8556,6 +8555,500 @@ body.dark #acBox .ac-item:hover,body.dark #acBox .ac-item:active{background:#2f4
   if(nav && window.MutationObserver) new MutationObserver(cur).observe(nav,{subtree:true,attributes:true,attributeFilter:['class']});
   cur();
 })();
+</script>
+<style id="fsShamileenCss">
+/* ===== FS (desktop full-screen windows) + شاملین ===== */
+.fs-bar{display:none}
+@media(min-width:900px){
+.modal-bg.fs{padding:0;align-items:stretch;background:var(--parchment)}
+.modal-bg.fs .modal{max-width:none;width:100%;height:100vh;height:100dvh;max-height:none;border-radius:0;padding:0 32px 32px;box-shadow:none}
+.modal-bg.fs .modal-close{display:none}
+.modal-bg.fs .fs-bar{display:flex;position:sticky;top:0;z-index:30;align-items:center;gap:12px;background:linear-gradient(135deg,#123524,#2f7a52);color:#fff;margin:0 -32px 16px;padding:10px 32px}
+.fs-bar b{flex:1;font-size:18px;font-family:'Noto Nastaliq Urdu',serif;font-weight:700}
+.fs-bar button{border:0;border-radius:9px;padding:7px 16px;font:700 13.5px inherit;font-family:inherit;cursor:pointer;background:#fff;color:#123524}
+.fs-bar button.x{background:#b83a3a;color:#fff}
+.modal-bg.fs .modal>*:not(.fs-bar){max-width:1280px;margin-inline:auto}
+.modal-bg.fs .row2{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+}
+.sh-tiles{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.sh-tile{flex:1;min-width:120px;background:#fff;border:1px solid var(--rule);border-radius:10px;padding:8px 12px;text-align:center}
+.sh-tile b{display:block;font-size:19px;color:var(--cover-green)}
+.sh-tile span{font-size:12px;color:var(--ink-soft)}
+.sh-tile.due b{color:#b83a3a}
+.shg{border:1px solid var(--rule);border-radius:12px;background:#fff;margin:10px 0;overflow:hidden}
+.shg-h{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;background:#eef5ee;padding:8px 12px;font-size:13.5px}
+.shg-h b{color:#123524}.shg-h em{font-style:normal;color:#b83a3a;font-weight:700}
+.shg table{width:100%;border-collapse:collapse;font-size:13.5px}
+.shg th{background:#f6f1e1;padding:6px 8px;font-size:12.5px}
+.shg td{padding:6px 8px;border-top:1px solid var(--rule);text-align:center}
+.shg td.l{text-align:start}
+.shg .ab{border:1px solid var(--rule);background:#fff;border-radius:7px;padding:2px 7px;cursor:pointer;margin:0 1px}
+.shchk{display:inline-flex;align-items:center;gap:5px;margin:3px 10px 3px 0;font-size:13.5px;cursor:pointer}
+.shchk input{width:auto}
+.dkv{background:#fff;border:1px solid var(--rule);border-radius:10px;padding:14px;margin:0 0 14px;overflow-x:auto}
+.dash-act.a8{background:linear-gradient(135deg,#1c6b4a,#4fae7c)}
+.dash-act.a9{background:linear-gradient(135deg,#9a5b12,#d9953a)}
+.dash-act.a10{background:linear-gradient(135deg,#4b4fa8,#7d83d6);padding:5px 11px 5px 9px !important;font-size:12px !important}
+
+.modal-bg.fs input,.modal-bg.fs select{padding:6px 8px;font-size:14px}
+.modal-bg.fs label{margin:5px 0 2px;font-size:12.5px}
+@media(min-width:900px){
+.modal-bg.fs .row2{gap:8px}
+.modal.fs-dense{display:flex !important;flex-wrap:wrap;align-content:flex-start;gap:2px 14px}
+.modal.fs-dense>*{flex:1 1 100%}
+.modal.fs-dense>.row2{flex:1 1 calc(50% - 14px)}
+.modal.fs-dense>.toggle-row{flex:1 1 calc(50% - 14px)}
+.fs-hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:5px 8px}
+.fs-hc{display:flex;flex-direction:column;gap:1px;margin:0 !important;padding:4px 6px;background:#fff;border:1px solid var(--rule);border-radius:8px}
+.fs-hc span{font-size:12px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fs-hc input{padding:3px 6px !important;font-size:14px !important;margin:0 !important}
+}
+.fs-ok{background:#e3f4e8;color:#14532d;border:1px solid #86c99a;border-radius:8px;padding:6px 10px;margin:0 0 8px;font-weight:700;font-size:13px}
+.cf-compact .ledger th,.cf-compact .ledger td{padding:2px 4px !important;font-size:12px}
+.cf-compact .cf-in{padding:3px 5px;font-size:12px}
+.cf-compact .cf-sec{margin:7px 0 3px;padding:4px 12px;background:linear-gradient(90deg,#123524,#2f7a52);color:#fff;font-size:13px}
+.cf-compact .cf-tot{padding:3px 12px;margin-top:3px;font-size:13px}
+.cf-compact label{margin:2px 0 1px;font-size:12px}
+.cf-compact .tbl-wrap{max-height:none !important;border-radius:8px}
+.cf-compact .btn.sm{padding:2px 10px}
+
+#fabBtn{display:none !important}
+.dash-act.a11{background:linear-gradient(135deg,#a23a3a,#e07a5f)}
+.fs-compact input,.fs-compact select{padding:3px 8px !important;height:30px;font-size:13px}
+.fs-compact label{margin:3px 0 1px !important;font-size:12px}
+.fs-compact .row2{display:flex !important;flex-wrap:wrap;gap:8px}
+.fs-compact .row2>div{flex:1 1 150px}
+.fs-compact table td,.fs-compact table th{padding:3px 6px !important;font-size:12.5px}
+.fs-compact .toolbar{margin:6px 0}
+@media(min-width:900px){
+.modal.fs-dense input,.modal.fs-dense select{padding:2px 7px !important;height:28px;font-size:13px}
+.modal.fs-dense label{margin:2px 0 0 !important;font-size:11.5px}
+.modal.fs-dense>.row2,.modal.fs-dense>.toggle-row{flex:1 1 calc(25% - 14px);min-width:290px}
+.modal.fs-dense .fs-hgrid{grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:3px 6px}
+.modal.fs-dense .fs-hc{padding:1px 5px}
+.modal.fs-dense .fs-hc span{font-size:11.5px}
+.modal.fs-dense .fs-hc input{height:24px;padding:1px 5px !important}
+.modal.fs-dense .btn{padding:6px 12px}
+}
+
+.lr-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0 10px}
+.lr-card{border:2px solid transparent;border-radius:14px;padding:12px 8px;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:inherit;box-shadow:0 3px 8px rgba(0,0,0,.15);opacity:.78;transition:.15s}
+.lr-card .lri{font-size:30px;line-height:1.1}.lr-card b{font-size:15px}.lr-card small{opacity:.9;font-size:11.5px}
+.lr-card.on{opacity:1;border-color:#fff;outline:3px solid #c98f2b;transform:translateY(-2px)}
+.lr-card.c1{background:linear-gradient(135deg,#a23a3a,#e07a5f)}.lr-card.c2{background:linear-gradient(135deg,#1c6b4a,#4fae7c)}
+.lr-card.c3{background:linear-gradient(135deg,#1f4e8c,#5b9bd5)}.lr-card.c4{background:linear-gradient(135deg,#7a3f9d,#b57edc)}
+.fs-x{color:#b83a3a;cursor:pointer;font-weight:700;margin-inline-start:4px}
+.fs-more{max-width:260px;margin-top:6px}
+.fs-ok{grid-column:1/-1}
+@media(min-width:900px){
+.modal.fs-khata{display:grid !important;grid-template-columns:repeat(4,1fr);gap:2px 14px;align-content:start}
+.modal.fs-khata>*{grid-column:1/-1;max-width:none !important;margin-inline:0 !important}
+.modal.fs-khata>.kf,.modal.fs-khata>.toggle-row{grid-column:auto}
+.fs-khata .kf label{margin:3px 0 1px;font-size:11.5px;display:block}
+.fs-khata .kf input,.fs-khata .kf select{padding:3px 8px;height:30px;font-size:13px}
+}
+</style>
+<script id="fsShamileenScript">
+/* ================= FS windows, شاملین (تحریک جدید / وقف جدید), DK open ================= */
+var FSX_ON=false, FSX_MQ=window.matchMedia('(min-width:900px)');
+(function(){
+  var _sm=showModal,_cm=closeModal,_pr=printReport;
+  showModal=function(h){ _sm(h); var bg=document.getElementById('modalBg'); if(!bg) return;
+    var on=FSX_ON&&FSX_MQ.matches; bg.classList.toggle('fs',on);
+    if(on){ var m=bg.querySelector('.modal'),h3=m.querySelector('h3'); 
+      m.insertAdjacentHTML('afterbegin','<div class="fs-bar"><button onclick="closeModal()">↩ واپسی</button><b>'+kEsc(h3?h3.textContent:'')+'</b><button class="x" onclick="closeModal()">✕ ختم</button></div>');
+      if(h3) h3.style.display='none'; if(/entryHeadsWrap/.test(h)) m.classList.add('fs-dense'); }
+    if(/class="cf-sec"/.test(h)){ var mm=bg.querySelector('.modal'); if(mm) mm.classList.add('cf-compact'); } };
+  closeModal=function(){ if(window.FSX_KEEP){ window.FSX_KEEP(); return; } FSX_ON=false; _cm(); };
+  printReport=function(){ FSX_ON=false; return _pr.apply(this,arguments); };
+  ['openEntryModal','openKhataModal','openDetailedKhataModal','openCashDetailsModal','openMuhassilBookModal','openDefaultersModal','openRemittanceSummaryModal','openIncomeModal','openExpenseModal','openNamewiseModal','openBudgetMembersModal','openTanzeemDetailModal','openShamileen','openShReport','openShamileenForm','openLocalReport'].forEach(function(n){
+    var o=window[n]; if(typeof o!=='function') return;
+    window[n]=function(){ FSX_ON=true; return o.apply(this,arguments); };
+  });
+  var back='<div style="margin-bottom:8px"><button class="btn outline sm" onclick="switchTab(\'dashboard\')">↩ واپسی / ختم</button></div>';
+  var _rs=renderSummary; renderSummary=function(){ return back+_rs(); };
+  var _rh=renderHeads; renderHeads=function(){ return back+_rh(); };
+  var _rd=renderDashboard; renderDashboard=function(){
+    var add='<button class="dash-act a8" onclick="openShamileen(\'tj\')"><span class="ico">🤝</span><span>تحریک جدید / وقف جدید شاملین</span></button>'+
+      '<button class="dash-act a9" onclick="openShReport()"><span class="ico">📑</span><span>شاملین رپورٹ</span></button>'+
+      '<button class="dash-act a11" onclick="openLocalReport()"><span class="ico">🧾</span><span>لوکل خرچ رپورٹ</span></button>'+
+      '<button class="dash-act a10" title="ہیڈز" onclick="switchTab(\'heads\')"><span class="ico">🏷</span><span>ہیڈز</span></button>';
+    return _rd().replace('<button class="dash-act a7"', add+'<button class="dash-act a7"'); };
+})();
+
+/* ---------- تفصیلی کھاتہ جات: اوپن / دیکھیں ---------- */
+function openDetailedKhataModal(){ DK_SEL=new Set(); DK_Q=''; renderDK(); }
+function renderDK(){
+  showModal('<h3>🗒 تفصیلی کھاتہ جات</h3>'+
+  '<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px">جن کھاتوں کا پرنٹ چاہیے یا دیکھنا ہے انہیں منتخب کریں — «کھولیں» سے پرنٹ سے پہلے دیکھ سکتے ہیں۔</div>'+
+  '<input type="text" value="'+kEsc(DK_Q)+'" placeholder="نام یا نمبر سے تلاش کریں..." oninput="DK_Q=this.value; refreshDK();">'+
+  '<label style="display:flex;align-items:center;gap:10px;padding:10px 4px;margin:6px 0 0;font-weight:700;cursor:pointer"><input type="checkbox" id="dkAll" style="width:18px;height:18px;flex:none" onchange="dkToggleAll(this.checked)"><span>تمام افراد منتخب کریں</span></label>'+
+  '<div id="dkList" style="max-height:52vh;overflow-y:auto;border:1px solid var(--rule);border-radius:9px;background:#fffefb"></div>'+
+  '<div id="dkCount" style="font-size:12.5px;color:var(--ink-soft);margin:8px 0"></div>'+
+  '<div class="toolbar"><button class="btn" onclick="dkPrint()">🖨 پرنٹ</button><button class="btn outline" onclick="dkViewSel()">👁 کھولیں</button></div>');
+  refreshDK();
+}
+function refreshDK(){
+  var list=dkFiltered(), box=document.getElementById('dkList'); if(!box) return;
+  box.innerHTML=list.length?list.map(function(k){return '<label style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-bottom:1px solid var(--rule);margin:0;cursor:pointer">'+
+   '<input type="checkbox" style="width:18px;height:18px;flex:none" '+(DK_SEL.has(k.id)?'checked':'')+' onchange="dkToggle(\''+k.id+'\',this.checked)">'+
+   '<span class="khata-num" style="display:inline-flex;flex:none">'+k.number+'</span>'+
+   '<span style="flex:1;min-width:0;font-size:13.5px">'+kEsc(k.name_ur||k.name_en)+'<span style="display:block;font-size:11.5px;color:var(--ink-soft)">'+kEsc(k.rel_ur||'')+'</span></span>'+
+   '<button type="button" class="btn outline sm" onclick="event.preventDefault();event.stopPropagation();dkView([\''+k.id+'\'])">👁 کھولیں</button></label>';}).join(''):'<div class="empty">کوئی کھاتہ نہیں ملا</div>';
+  dkSyncState(list);
+}
+function dkViewSel(){ if(!DK_SEL.size){ alert('پہلے کم از کم ایک کھاتہ منتخب کریں'); return; } dkView(Array.from(DK_SEL)); }
+function dkView(ids){
+  var list=DB.khatas.filter(function(k){return ids.indexOf(k.id)>=0;}).sort(function(a,b){return a.number-b.number;});
+  window.__dkv=ids;
+  showModal('<h3>🗒 تفصیلی کھاتہ جات ('+list.length+')</h3><div class="toolbar"><button class="btn outline sm" onclick="renderDK()">↩ فہرست پر واپسی</button><button class="btn outline sm" onclick="dkViewPrint()">🖨 پرنٹ</button></div>'+
+    list.map(function(k){return '<div class="dkv">'+khataPrintBlockHtml(k)+'</div>';}).join(''));
+}
+function dkViewPrint(){ DK_SEL=new Set(window.__dkv||[]); dkPrint(); }
+
+/* ================= شاملین: تحریک جدید / وقف جدید ================= */
+var SHK={tj:'تحریک جدید',wj:'وقف جدید'}, SHTAN=['لجنہ','خدام','انصار','طفل','ناصرات','مرحومین'], SHDAF=['اول','دوم','سوم','چہارم','پنجم'];
+var SHM=['جنوری','فروری','مارچ','اپریل','مئی','جون','جولائی','اگست','ستمبر','اکتوبر','نومبر','دسمبر'];
+var SH_KIND='tj', SH_Q='', SH_D=null, SH_LAST={}, SHR={kind:'tj',type:'all',daf:'',tan:'',via:''};
+function SH(){ if(!DB.shm) DB.shm={list:[],tj:{from:'2026-11-01',to:'2027-10-31'},wj:{from:'2026-01-01',to:'2026-12-31'}}; return DB.shm; }
+function shHead(kind){ return DB.heads.find(function(h){return (h.ur||'').indexOf(SHK[kind])>=0;}); }
+function shYearLbl(kind){ var p=SH()[kind], f=function(d){return SHM[+d.slice(5,7)-1]+' '+d.slice(2,4);}; return 'سال '+SHK[kind]+' '+f(p.from)+' تا '+f(p.to); }
+function shK(id){ return DB.khatas.find(function(k){return k.id===id;}); }
+function shKName(id){ var k=shK(id); return k?(k.name_ur||k.name_en):'—'; }
+function shKLabel(k){ return k.number+' — '+(k.name_ur||k.name_en); }
+function shCalc(kind){
+  var S=SH(),p=S[kind],hd=shHead(kind),R={},V={},mem=S.list.filter(function(m){return m.kind===kind;});
+  mem.forEach(function(m){R[m.id]={budget:+m.budget||0,paid:0,parts:[]};});
+  Array.from(new Set(mem.map(function(m){return m.via;}))).filter(Boolean).forEach(function(v){
+    var ms=mem.filter(function(m){return m.via===v;});
+    var rec=hd?DB.entries.filter(function(e){return e.khataId===v&&!e.cancelled&&e.date>=p.from&&e.date<=p.to&&(e.amounts[hd.id]||0)>0;}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;}):[];
+    var mi=0,got=0;
+    rec.forEach(function(e){ var a=e.amounts[hd.id]; got+=a;
+      while(a>0&&mi<ms.length){ var r=R[ms[mi].id],need=r.budget-r.paid; if(need<=0){mi++;continue;}
+        var x=Math.min(need,a); r.paid+=x; a-=x; r.parts.push({date:e.date,no:e.receiptNo||'',amt:x}); if(r.paid>=r.budget) mi++; } });
+    var b=ms.reduce(function(s,m){return s+(+m.budget||0);},0);
+    V[v]={got:got,budget:b,n:ms.length,paid:Math.min(got,b),excess:Math.max(0,got-b)};
+  });
+  mem.filter(function(m){return !m.via;}).forEach(function(m){ var r=R[m.id]; DB.entries.forEach(function(e){ if(e.cancelled||!hd||!e.smNo||String(e.smNo)!==String(m.no)||e.date<p.from||e.date>p.to) return; var a=e.amounts[hd.id]||0; if(a>0){ r.paid+=a; r.parts.push({date:e.date,no:e.receiptNo||'',amt:a}); } }); V['~'+m.id]={got:r.paid,budget:r.budget,n:1,paid:r.paid,excess:Math.max(0,r.paid-r.budget)}; });
+  return {R:R,V:V,hd:hd};
+}
+function shRows(kind,f){
+  f=f||{}; var c=shCalc(kind);
+  var rows=SH().list.filter(function(m){return m.kind===kind&&(!f.daf||m.daftar===f.daf)&&(!f.tan||m.tanzeem===f.tan)&&(!f.via||m.via===f.via);}).map(function(m){
+    var r=c.R[m.id]; return {m:m,via:(m.via?shKName(m.via):'براہ راست'),budget:r.budget,paid:r.paid,bal:r.budget-r.paid,parts:r.parts}; });
+  rows.sort(function(a,b){var x=shK(a.m.via),y=shK(b.m.via); return ((x?x.number:0)-(y?y.number:0));});
+  rows.c=c; return rows;
+}
+function shDafList(){ var s=SHDAF.slice(); SH().list.forEach(function(m){ if(m.daftar&&s.indexOf(m.daftar)<0) s.push(m.daftar); }); return s; }
+function shSyncBudget(via,kind){ var k=shK(via),hd=shHead(kind); if(!k||!hd) return; var sum=SH().list.filter(function(m){return m.kind===kind&&m.via===via;}).reduce(function(s,m){return s+(+m.budget||0);},0); if(!k.budgetByHead) k.budgetByHead={}; var old=+k.budgetByHead[hd.id]||0; k.budgetByHead[hd.id]=sum; k.budgetYear=(+k.budgetYear||0)+sum-old; }
+function openShamileenForm(k){ SH_KIND=k; shForm(); }
+function shGKey(m){ return m.via||('~'+m.id); }
+function shGName(v){ if(v.charAt(0)==='~'){ var m=SH().list.find(function(x){return '~'+x.id===v;}); return 'براہ راست — '+(m?m.name:''); } return shKName(v); }
+function shSum(rows,k){ return rows.reduce(function(s,r){return s+r[k];},0); }
+function shMemTable(rows,opt){
+  opt=opt||{}; var h='<table class="ledger"><thead><tr><th>#</th><th>نام</th><th>والد کا نام</th>'+(opt.noVia?'':'<th>بذریعہ</th>')+'<th>بجٹ نمبر</th><th>دفتر</th><th>تنظیم</th><th>سالانہ بجٹ</th><th>وصولی</th><th>بقایا</th></tr></thead><tbody>';
+  rows.forEach(function(r,i){ h+='<tr><td>'+(i+1)+'</td><td style="text-align:start">'+kEsc(r.m.name)+'</td><td>'+kEsc(r.m.father||'')+'</td>'+(opt.noVia?'':'<td>'+kEsc(r.via)+'</td>')+'<td>'+kEsc(r.m.no||'')+'</td><td>'+kEsc(r.m.daftar||'')+'</td><td>'+kEsc(r.m.tanzeem||'')+'</td><td>'+fmtNum(r.budget)+'</td><td>'+fmtNum(r.paid)+'</td><td>'+fmtNum(r.bal)+'</td></tr>'; });
+  h+='<tr class="total-row"><td colspan="'+(opt.noVia?6:7)+'">میزان</td><td>'+fmtNum(shSum(rows,'budget'))+'</td><td>'+fmtNum(shSum(rows,'paid'))+'</td><td>'+fmtNum(shSum(rows,'bal'))+'</td></tr></tbody></table>';
+  return h;
+}
+/* ---- فہرست ---- */
+function openShamileen(k){ if(k) SH_KIND=k; SH_Q=''; renderShamileen(); }
+function renderShamileen(){
+  var k=SH_KIND,p=SH()[k],all=shRows(k),c=all.c;
+  var rows=all.filter(function(r){return !SH_Q||(r.m.name+' '+(r.m.father||'')+' '+r.via+' '+(r.m.no||'')).indexOf(SH_Q)>=0;});
+  var g={},ord=[]; rows.forEach(function(r){ if(!g[shGKey(r.m)]){g[shGKey(r.m)]=[];ord.push(shGKey(r.m));} g[shGKey(r.m)].push(r); });
+  var tile=function(n,l,cl){return '<div class="sh-tile '+(cl||'')+'"><b>'+n+'</b><span>'+l+'</span></div>';};
+  var body=ord.map(function(v){ var rs=g[v],V=c.V[v]||{}; var b=shSum(rs,'budget'),pd=shSum(rs,'paid');
+    return '<div class="shg"><div class="shg-h"><span>بذریعہ: <b>'+kEsc(shGName(v))+'</b></span><span>شاملین: '+rs.length+'</span><span>بجٹ: '+fmtNum(b)+'</span><span>جمع شدہ رقم: '+fmtNum(V.got||0)+'</span><span>بقایا: <em>'+fmtNum(b-pd)+'</em></span>'+(V.excess?'<span>زائد رقم: '+fmtNum(V.excess)+'</span>':'')+'</div>'+
+    '<table><thead><tr><th>#</th><th>نام</th><th>والد کا نام</th><th>بجٹ نمبر</th><th>دفتر</th><th>تنظیم</th><th>بجٹ</th><th>وصولی</th><th>بقایا</th><th></th></tr></thead><tbody>'+
+    rs.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td class="l">'+kEsc(r.m.name)+'</td><td>'+kEsc(r.m.father||'')+'</td><td>'+kEsc(r.m.no||'')+'</td><td>'+kEsc(r.m.daftar||'')+'</td><td>'+kEsc(r.m.tanzeem||'')+'</td><td>'+fmtNum(r.budget)+'</td><td>'+fmtNum(r.paid)+'</td><td>'+fmtNum(r.bal)+'</td>'+
+      '<td><button class="ab" title="کھاتہ" onclick="shView(\''+r.m.id+'\')">👁</button><button class="ab" title="ترمیم" onclick="shForm(\''+r.m.id+'\')">✏️</button><button class="ab" title="حذف" onclick="shDel(\''+r.m.id+'\')">🗑</button></td></tr>';}).join('')+'</tbody></table></div>'; }).join('');
+  showModal('<h3>🤝 '+SHK[k]+' — شاملین کی فہرست</h3>'+
+   '<div class="pill-row" style="flex-wrap:wrap"><button class="pill '+(k==='tj'?'active':'')+'" onclick="SH_KIND=\'tj\';renderShamileen()">تحریک جدید</button><button class="pill '+(k==='wj'?'active':'')+'" onclick="SH_KIND=\'wj\';renderShamileen()">وقف جدید</button></div>'+
+   '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px"><b>'+shYearLbl(k)+'</b><span>مدت:</span><input type="date" style="width:auto" value="'+p.from+'" onchange="SH()[SH_KIND].from=this.value;saveDB();renderShamileen()"><span>→</span><input type="date" style="width:auto" value="'+p.to+'" onchange="SH()[SH_KIND].to=this.value;saveDB();renderShamileen()"></div>'+
+   '<div class="sh-tiles">'+tile(all.length,'کل شاملین')+tile(fmtNum(shSum(all,'budget')),'کل بجٹ')+tile(fmtNum(shSum(all,'paid')),'کل وصولی')+tile(fmtNum(shSum(all,'bal')),'کل بقایا','due')+'</div>'+
+   '<div class="sh-tiles"><div class="sh-tile"><span>ٹارگٹ مرکز</span><input type="number" style="text-align:center;font-weight:700" value="'+(p.target||'')+'" onchange="SH()[SH_KIND].target=+this.value||0;saveDB();renderShamileen()"></div>'+tile(fmtNum(shSum(all,'budget')),'وعدہ')+tile(fmtNum(shSum(all,'paid')),'وصولی')+tile(fmtNum(shSum(all,'bal')),'بقایا','due')+'</div>'+
+   '<div class="toolbar"><button class="btn sm" onclick="shForm()">➕ نیا شامل '+SHK[k]+'</button><button class="btn outline sm" onclick="openShReport()">📊 رپورٹ</button><button class="btn outline sm" onclick="shPrintList()">🖨 پرنٹ</button>'+
+   '<input type="text" style="flex:1;min-width:160px" placeholder="نام / بذریعہ / بجٹ نمبر سے تلاش" value="'+kEsc(SH_Q)+'" onchange="SH_Q=this.value;renderShamileen()"></div>'+
+   (body||'<div class="empty">ابھی کوئی شامل درج نہیں — «➕ نیا شامل» دبائیں۔ رقم روزنامچہ میں بذریعہ فرد کے کھاتے میں رسید لکھنے پر خود شاملین میں ترتیب وار تقسیم ہو جائے گی۔</div>'));
+}
+function shPrintList(){ var r=shRows(SH_KIND),p=SH()[SH_KIND]; var st='<table class="ledger"><thead><tr><th>ٹارگٹ مرکز</th><th>وعدہ</th><th>وصولی</th><th>بقایا</th></tr></thead><tbody><tr><td>'+fmtNum(p.target||0)+'</td><td>'+fmtNum(shSum(r,'budget'))+'</td><td>'+fmtNum(shSum(r,'paid'))+'</td><td>'+fmtNum(shSum(r,'bal'))+'</td></tr></tbody></table><br>'; printReport(SHK[SH_KIND]+' — شاملین کی فہرست — '+shYearLbl(SH_KIND), st+shMemTable(r)); }
+/* ---- فارم ---- */
+function shForm(id){
+  var m=id&&SH().list.find(function(x){return x.id===id;});
+  if(m) SH_D=Object.assign({edit:true},m); else { var L=SH_LAST; SH_D={edit:false,id:null,kind:SH_KIND,via:L.via||'',name:'',father:'',no:'',daftar:L.daftar||'',tanzeem:L.tanzeem||'',budget:L.budget||''}; }
+  renderShForm();
+}
+function shViaInfo(){ var d=SH_D; if(!d.via) return ''; var ms=SH().list.filter(function(m){return m.kind===d.kind&&m.via===d.via&&m.id!==d.id;}); return 'اس بذریعہ کے تحت پہلے سے شاملین: '+ms.length+' — کل بجٹ: '+fmtNum(ms.reduce(function(s,m){return s+(+m.budget||0);},0)); }
+function shPickVia(v){ var k=DB.khatas.find(function(x){return shKLabel(x)===v;}); SH_D.via=k?k.id:''; var e=document.getElementById('shViaInfo'); if(e) e.textContent=shViaInfo(); }
+function renderShForm(msg){
+  var d=SH_D,vk=d.via&&shK(d.via);
+  showModal('<h3>'+(d.edit?'✏️ شامل میں ترمیم':'➕ نیا شامل')+' — '+SHK[d.kind]+'</h3>'+
+   '<div class="toolbar"><button class="btn outline sm" onclick="renderShamileen()">↩ فہرست پر واپسی</button></div>'+
+   (msg?'<div style="background:#e3f4e8;color:#14532d;border:1px solid #86c99a;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-weight:700">'+msg+'</div>':'')+
+   '<div class="pill-row"><button class="pill '+(d.kind==='tj'?'active':'')+'" onclick="SH_D.kind=\'tj\';renderShForm()">تحریک جدید</button><button class="pill '+(d.kind==='wj'?'active':'')+'" onclick="SH_D.kind=\'wj\';renderShForm()">وقف جدید</button></div>'+
+   '<label>بذریعہ (اختیاری — خالی ہو تو بجٹ نمبر لازم)</label><input list="shViaList" value="'+kEsc(vk?shKLabel(vk):'')+'" autocomplete="off" oninput="shPickVia(this.value)"><datalist id="shViaList">'+DB.khatas.slice().sort(function(a,b){return a.number-b.number;}).map(function(k){return '<option value="'+kEsc(shKLabel(k))+'">';}).join('')+'</datalist>'+
+   '<div id="shViaInfo" style="font-size:12.5px;color:var(--ink-soft);margin:3px 0 8px">'+shViaInfo()+'</div>'+
+   '<div class="row2"><div><label>شامل کا نام</label><input type="text" value="'+kEsc(d.name)+'" oninput="SH_D.name=this.value"></div><div><label>والد کا نام</label><input type="text" value="'+kEsc(d.father)+'" oninput="SH_D.father=this.value"></div></div>'+
+   '<div class="row2"><div><label>بجٹ نمبر</label><input type="text" value="'+kEsc(d.no)+'" oninput="SH_D.no=this.value"></div>'+
+   '<div><label>دفتر (اختیاری — خود لکھیں)</label><input type="text" list="shDafList" value="'+kEsc(d.daftar)+'" oninput="SH_D.daftar=this.value"><datalist id="shDafList">'+shDafList().map(function(x){return '<option value="'+kEsc(x)+'">';}).join('')+'</datalist></div>'+
+   '<div><label>تنظیم</label><select onchange="SH_D.tanzeem=this.value"><option value="">—</option>'+SHTAN.map(function(x){return '<option '+(d.tanzeem===x?'selected':'')+'>'+x+'</option>';}).join('')+'</select></div>'+
+   '<div><label>سالانہ بجٹ</label><input type="number" inputmode="numeric" value="'+kEsc(d.budget)+'" oninput="SH_D.budget=this.value"></div><div><label>اضافی بجٹ (اختیاری)</label><input type="number" inputmode="numeric" value="'+kEsc(d.extra||'')+'" oninput="SH_D.extra=this.value"></div></div>'+
+   '<button class="btn block" style="margin-top:12px" onclick="shSave()">محفوظ کریں'+(d.edit?'':' (اگلا شامل لکھیں)')+'</button>'+
+   '<button class="btn outline block" style="margin-top:8px" onclick="renderShamileen()">اندراج مکمل — فہرست دیکھیں</button>');
+}
+function shSave(){
+  var d=SH_D; if(d.via&&!shK(d.via)){ alert('بذریعہ: فہرست میں سے موجودہ کھاتہ منتخب کریں'); return; }
+  if(!d.via){ var sn=String(d.no||'').trim(); if(!sn){ alert('بذریعہ کے بغیر اندراج میں بجٹ نمبر لازم ہے'); return; } if(SH().list.some(function(m){return m.id!==d.id&&m.kind===d.kind&&!m.via&&String(m.no).trim()===sn;})){ alert('یہ بجٹ نمبر پہلے سے موجود ہے'); return; } }
+  if(!String(d.name).trim()){ alert('شامل کا نام لکھیں'); return; }
+  var S=SH(), rec={kind:d.kind,via:d.via,name:String(d.name).trim(),father:String(d.father||'').trim(),no:String(d.no||'').trim(),daftar:d.daftar,tanzeem:d.tanzeem,budget:+d.budget||0,extra:+d.extra||0};
+  if(d.edit){ var mo=S.list.find(function(x){return x.id===d.id;}),ov=mo.via,okd=mo.kind; Object.assign(mo,rec); shSyncBudget(ov,okd); shSyncBudget(rec.via,rec.kind); saveDB(); SH_KIND=d.kind; renderShamileen(); return; }
+  rec.id=uid('sh'); S.list.push(rec); shSyncBudget(rec.via,rec.kind); saveDB();
+  SH_LAST={via:d.via,daftar:d.daftar,tanzeem:d.tanzeem,budget:d.budget};
+  SH_D={edit:false,id:null,kind:d.kind,via:d.via,name:'',father:'',no:'',daftar:d.daftar,tanzeem:d.tanzeem,budget:d.budget};
+  renderShForm('✅ '+kEsc(rec.name)+' محفوظ ہو گیا');
+}
+function shDel(id){ requireEditPin(function(){ if(!confirm('یہ شامل حذف کریں؟')) return; var mo=SH().list.find(function(m){return m.id===id;}); SH().list=SH().list.filter(function(m){return m.id!==id;}); if(mo) shSyncBudget(mo.via,mo.kind); saveDB(); renderShamileen(); }); }
+/* ---- شامل کا الگ کھاتہ ---- */
+function shView(id){
+  var m=SH().list.find(function(x){return x.id===id;}); if(!m) return;
+  var r=shCalc(m.kind).R[m.id];
+  var html='<table><tbody><tr><td>نام</td><td>'+kEsc(m.name)+'</td><td>والد</td><td>'+kEsc(m.father||'')+'</td></tr><tr><td>بذریعہ</td><td>'+kEsc(shKName(m.via))+'</td><td>بجٹ نمبر</td><td>'+kEsc(m.no||'')+'</td></tr><tr><td>دفتر</td><td>'+kEsc(m.daftar||'')+'</td><td>تنظیم</td><td>'+kEsc(m.tanzeem||'')+'</td></tr><tr><td>سالانہ بجٹ</td><td>'+fmtNum(r.budget)+'</td><td>وصولی / بقایا</td><td>'+fmtNum(r.paid)+' / '+fmtNum(r.budget-r.paid)+'</td></tr></tbody></table>'+
+   '<h3 style="font-size:15px">رسیدوں کی تفصیل</h3>'+(r.parts.length?'<table><thead><tr><th>#</th><th>تاریخ</th><th>رسید نمبر</th><th>اس شامل کے حصے میں</th></tr></thead><tbody>'+r.parts.map(function(p,i){return '<tr><td>'+(i+1)+'</td><td>'+p.date+'</td><td>'+kEsc(p.no)+'</td><td>'+fmtNum(p.amt)+'</td></tr>';}).join('')+'</tbody></table>':'<div class="note">ابھی کوئی وصولی نہیں</div>');
+  window.__shv={t:SHK[m.kind]+' — '+m.name+' — '+shYearLbl(m.kind),h:html};
+  showModal('<h3>👁 '+kEsc(m.name)+' — کھاتہ ('+SHK[m.kind]+')</h3><div class="toolbar"><button class="btn outline sm" onclick="renderShamileen()">↩ فہرست پر واپسی</button><button class="btn outline sm" onclick="printReport(window.__shv.t,window.__shv.h)">🖨 پرنٹ</button></div><div class="dkv">'+html+'</div>');
+}
+/* ---- رپورٹس ---- */
+var SHR_TYPES=[['all','تمام شاملین کی فہرست'],['byvia','بذریعہ فرد تمام شاملین کی فہرست'],['viasum','ہر فرد کے ذریعے جمع شدہ رقم'],['full','مکمل ادائیگی کرنے والے شاملین'],['part','نامکمل ادائیگی کرنے والے شاملین'],['group','دفتر و تنظیم وار خلاصہ'],['ram','رمضان المبارک لسٹ'],['extra','اضافی بجٹ رپورٹ']];
+function openShReport(){ SHR.kind=SH_KIND; renderShReport(); }
+function shReportHtml(){
+  var R=SHR,rows=shRows(R.kind,{daf:R.daf,tan:R.tan,via:R.via}),c=rows.c,h='';
+  if(R.type==='all') h=shMemTable(rows);
+  else if(R.type==='full') h=shMemTable(rows.filter(function(r){return r.budget>0&&r.bal<=0;}));
+  else if(R.type==='part') h=shMemTable(rows.filter(function(r){return r.bal>0;}));
+  else if(R.type==='byvia'){ var seen=[]; rows.forEach(function(r){if(seen.indexOf(shGKey(r.m))<0)seen.push(shGKey(r.m));});
+    h=seen.map(function(v){var rs=rows.filter(function(r){return shGKey(r.m)===v;}); return '<div class="block-label">بذریعہ: '+kEsc(shGName(v))+'</div>'+shMemTable(rs,{noVia:true});}).join(''); }
+  else if(R.type==='viasum'){ var vs=Array.from(new Set(rows.map(function(r){return shGKey(r.m);}))),t=[0,0,0,0,0,0];
+    h='<table class="ledger"><thead><tr><th>#</th><th>بذریعہ</th><th>شاملین</th><th>کل بجٹ</th><th>جمع شدہ رقم</th><th>تقسیم شدہ وصولی</th><th>بقایا</th><th>زائد رقم</th></tr></thead><tbody>'+
+     vs.map(function(v,i){var rs=rows.filter(function(r){return shGKey(r.m)===v;}),V=c.V[v]||{got:0,excess:0},b=shSum(rs,'budget'),p=shSum(rs,'paid'); [rs.length,b,V.got,p,b-p,V.excess].forEach(function(x,j){t[j]+=x;});
+       return '<tr><td>'+(i+1)+'</td><td style="text-align:start">'+kEsc(shGName(v))+'</td><td>'+rs.length+'</td><td>'+fmtNum(b)+'</td><td>'+fmtNum(V.got)+'</td><td>'+fmtNum(p)+'</td><td>'+fmtNum(b-p)+'</td><td>'+fmtNum(V.excess)+'</td></tr>';}).join('')+
+     '<tr class="total-row"><td colspan="2">میزان</td>'+t.map(function(x){return '<td>'+fmtNum(x)+'</td>';}).join('')+'</tr></tbody></table>'; }
+  else if(R.type==='group'){ var grp=function(title,keys,key){ return '<div class="block-label">'+title+'</div><table class="ledger"><thead><tr><th>'+title+'</th><th>شاملین</th><th>بجٹ</th><th>وصولی</th><th>بقایا</th></tr></thead><tbody>'+
+      keys.map(function(kk){var rs=rows.filter(function(r){return r.m[key]===kk;}); return '<tr><td>'+kk+'</td><td>'+rs.length+'</td><td>'+fmtNum(shSum(rs,'budget'))+'</td><td>'+fmtNum(shSum(rs,'paid'))+'</td><td>'+fmtNum(shSum(rs,'bal'))+'</td></tr>';}).join('')+'</tbody></table>'; };
+    h=grp('دفتر',shDafList(),'daftar')+grp('تنظیم',SHTAN,'tanzeem'); }
+  else if(R.type==='ram'){ var rf=shRam(R.kind,'rf'),rt=shRam(R.kind,'rt'),T=0;
+    var rr=rows.map(function(r){return {r:r,a:r.parts.filter(function(x){return x.date>=rf&&x.date<=rt;}).reduce(function(s,x){return s+x.amt;},0)};}).filter(function(x){return x.a>0;});
+    h=rr.length?'<table class="ledger"><thead><tr><th>#</th><th>نام</th><th>بذریعہ</th><th>وصولی</th><th>کیفیت</th></tr></thead><tbody>'+rr.map(function(x,i){T+=x.a;return '<tr><td>'+(i+1)+'</td><td style="text-align:start">'+kEsc(x.r.m.name)+'</td><td>'+kEsc(x.r.via)+'</td><td>'+fmtNum(x.a)+'</td><td>'+(x.r.budget>0&&x.r.bal<=0?'مکمل ادا':'بقایا '+fmtNum(x.r.bal))+'</td></tr>';}).join('')+'<tr class="total-row"><td></td><td>میزان</td><td></td><td>'+fmtNum(T)+'</td><td></td></tr></tbody></table>':'<div class="empty">اس مدت میں کوئی ادائیگی نہیں</div>'; }
+  else if(R.type==='extra'){ var ex=rows.filter(function(r){return +r.m.extra>0;}),T2=0;
+    h=ex.length?'<table class="ledger"><thead><tr><th>#</th><th>نام</th><th>بذریعہ</th><th>اضافی بجٹ</th></tr></thead><tbody>'+ex.map(function(r,i){T2+=+r.m.extra;return '<tr><td>'+(i+1)+'</td><td style="text-align:start">'+kEsc(r.m.name)+'</td><td>'+kEsc(r.via)+'</td><td>'+fmtNum(+r.m.extra)+'</td></tr>';}).join('')+'<tr class="total-row"><td></td><td>کل میزان</td><td></td><td>'+fmtNum(T2)+'</td></tr></tbody></table>':'<div class="empty">کسی شامل کا اضافی بجٹ درج نہیں</div>'; }
+  return h||'<div class="empty">کوئی ڈیٹا نہیں</div>';
+}
+function shRam(k,w){ var p=SH()[k]; return p[w]||(w==='rf'?(k==='tj'?'2027-02-08':'2026-02-18'):(k==='tj'?'2027-03-09':'2026-03-19')); }
+function shRTitle(){ var n=(SHR_TYPES.filter(function(x){return x[0]===SHR.type;})[0]||[])[1]; return SHK[SHR.kind]+' — '+n+' — '+shYearLbl(SHR.kind); }
+function renderShReport(){
+  var R=SHR,sel=function(key,opts,all){return '<select onchange="SHR.'+key+'=this.value;renderShReport()"><option value="">'+all+'</option>'+opts.map(function(o){return '<option value="'+(o[0])+'" '+(R[key]===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';};
+  var vias=Array.from(new Set(SH().list.filter(function(m){return m.kind===R.kind;}).map(function(m){return m.via;}))).map(function(v){return [v,shGName(v)];});
+  showModal('<h3>📊 '+SHK[R.kind]+' — شاملین کی مکمل تفصیل (رپورٹ)</h3>'+
+   '<div class="pill-row"><button class="pill '+(R.kind==='tj'?'active':'')+'" onclick="SHR.kind=\'tj\';SHR.via=\'\';renderShReport()">تحریک جدید</button><button class="pill '+(R.kind==='wj'?'active':'')+'" onclick="SHR.kind=\'wj\';SHR.via=\'\';renderShReport()">وقف جدید</button></div>'+
+   '<div class="row2"><div><label>رپورٹ</label><select onchange="SHR.type=this.value;renderShReport()">'+SHR_TYPES.map(function(x){return '<option value="'+x[0]+'" '+(R.type===x[0]?'selected':'')+'>'+x[1]+'</option>';}).join('')+'</select></div>'+
+   '<div><label>بذریعہ</label>'+sel('via',vias,'تمام')+'</div><div><label>دفتر</label>'+sel('daf',shDafList().map(function(x){return [x,x];}),'تمام')+'</div><div><label>تنظیم</label>'+sel('tan',SHTAN.map(function(x){return [x,x];}),'تمام')+'</div></div>'+
+   (R.type==='ram'?'<div style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:6px"><b>رمضان المبارک کی مدت:</b><input type="date" style="width:auto" value="'+shRam(R.kind,'rf')+'" onchange="SH()[SHR.kind].rf=this.value;saveDB();renderShReport()"><span>→</span><input type="date" style="width:auto" value="'+shRam(R.kind,'rt')+'" onchange="SH()[SHR.kind].rt=this.value;saveDB();renderShReport()"></div>':'')+
+   '<div class="toolbar" style="margin-top:10px"><button class="btn sm" onclick="printReport(shRTitle(),shReportHtml())">🖨 پرنٹ / PDF / Excel</button><button class="btn outline sm" onclick="renderShamileen()">↩ شاملین فہرست</button></div>'+
+   '<div class="tbl-wrap" style="max-height:none">'+shReportHtml()+'</div>');
+}
+/* ---- اسم وار: تحریک جدید / وقف جدید کے ساتھ کالم منتخب ---- */
+var NW_COLS=new Set(['name','via','daf','tan','budget','paid','bal']),NW_DEF=[['name','نام'],['via','بذریعہ'],['daf','دفتر'],['tan','تنظیم'],['budget','بجٹ'],['paid','وصولی'],['bal','بقایا']];
+function nwKind(){ var h=DB.heads.find(function(x){return x.id===namewiseHeadId;}); if(!h) return null; return (h.ur||'').indexOf('تحریک جدید')>=0?'tj':((h.ur||'').indexOf('وقف جدید')>=0?'wj':null); }
+function nwTog(k,on){ if(on) NW_COLS.add(k); else NW_COLS.delete(k); renderNamewiseModal(); }
+function nwTable(kind){
+  var rows=shRows(kind),cols=NW_DEF.filter(function(c){return NW_COLS.has(c[0]);});
+  var v=function(r,k){return k==='name'?kEsc(r.m.name):k==='via'?kEsc(r.via):k==='daf'?kEsc(r.m.daftar||''):k==='tan'?kEsc(r.m.tanzeem||''):fmtNum(r[k]);};
+  if(!rows.length) return '<div class="empty">اس مد کے شاملین ابھی درج نہیں</div>';
+  return '<table class="ledger"><thead><tr><th>#</th>'+cols.map(function(c){return '<th>'+c[1]+'</th>';}).join('')+'</tr></thead><tbody>'+
+   rows.map(function(r,i){return '<tr><td>'+(i+1)+'</td>'+cols.map(function(c){return '<td>'+v(r,c[0])+'</td>';}).join('')+'</tr>';}).join('')+
+   '<tr class="total-row"><td></td>'+cols.map(function(c){return '<td>'+(['budget','paid','bal'].indexOf(c[0])>=0?fmtNum(shSum(rows,c[0])):(c[0]==='name'?'میزان':''))+'</td>';}).join('')+'</tr></tbody></table>';
+}
+(function(){
+  var _rnw=renderNamewiseModal,_pnw=printNamewiseList,_snw=shareNamewiseList,_rdf=renderDefaultersModal,_pdl=printDefaultersList;
+  renderNamewiseModal=function(){ var k=nwKind(); if(!k) return _rnw();
+    showModal('<h3>اسم وار تفصیل لسٹ</h3><label>مد منتخب کریں</label><select onchange="namewiseHeadId=this.value;renderNamewiseModal()">'+DB.heads.map(function(h){return '<option value="'+h.id+'" '+(namewiseHeadId===h.id?'selected':'')+'>'+h.ur+'</option>';}).join('')+'</select>'+
+     '<div style="margin:10px 0 4px;font-weight:700">'+shYearLbl(k)+' — کالم منتخب کریں:</div><div>'+NW_DEF.map(function(c){return '<label class="shchk"><input type="checkbox" '+(NW_COLS.has(c[0])?'checked':'')+' onchange="nwTog(\''+c[0]+'\',this.checked)">'+c[1]+'</label>';}).join('')+'</div>'+
+     '<div class="tbl-wrap" style="margin-top:8px;max-height:none">'+nwTable(k)+'</div><div class="toolbar" style="margin-top:12px"><button class="btn outline sm" onclick="printNamewiseList()">🖨 پرنٹ</button></div>'); };
+  printNamewiseList=function(){ var k=nwKind(); if(!k) return _pnw(); printReport('اسم وار تفصیل لسٹ — '+shYearLbl(k),nwTable(k)); };
+  shareNamewiseList=function(){ if(nwKind()){ printNamewiseList(); return; } _snw(); };
+  /* فہرست بقایا دار: تحریک جدید / وقف جدید منتخب ہو تو بذریعہ وار سادہ لسٹ */
+  window.dfKind=function(){ if(defaultersHeadIds.indexOf('all')>=0) return null; for(var i=0;i<defaultersHeadIds.length;i++){ var h=DB.heads.find(function(x){return x.id===defaultersHeadIds[i];}); if(h&&(h.ur||'').indexOf('تحریک جدید')>=0) return 'tj'; if(h&&(h.ur||'').indexOf('وقف جدید')>=0) return 'wj'; } return null; };
+  window.dfTable=function(kind){
+    var sel=defaultersHeadIds.map(function(id){return DB.heads.find(function(x){return x.id===id;});}).filter(Boolean);
+    var daf=sel.some(function(h){return (h.ur||'').indexOf('دفتر اطفال')>=0;})?'اطفال':'';
+    var rows=shRows(kind,{daf:daf}),g={},ord=[]; rows.forEach(function(r){ if(!g[shGKey(r.m)]){g[shGKey(r.m)]={n:shGName(shGKey(r.m)),b:0,p:0};ord.push(shGKey(r.m));} g[shGKey(r.m)].b+=r.budget; g[shGKey(r.m)].p+=r.paid; });
+    var lbl=sel.map(function(h){return h.ur;}).join('،'),L=ord.map(function(v){return g[v];}),tb=0,tp=0;
+    if(!L.length) return '<div class="empty">ابھی شاملین درج نہیں</div>';
+    return '<table class="ledger"><thead><tr><th>#</th><th>نام</th><th>بجٹ '+lbl+'</th><th>وصولی '+lbl+'</th><th>بقایا '+lbl+'</th></tr></thead><tbody>'+
+      L.map(function(x,i){tb+=x.b;tp+=x.p;return '<tr><td>'+(i+1)+'</td><td style="text-align:start">'+kEsc(x.n)+'</td><td>'+fmtNum(x.b)+'</td><td>'+fmtNum(x.p)+'</td><td>'+fmtNum(x.b-x.p)+'</td></tr>';}).join('')+
+      '<tr class="total-row"><td colspan="2">میزان</td><td>'+fmtNum(tb)+'</td><td>'+fmtNum(tp)+'</td><td>'+fmtNum(tb-tp)+'</td></tr></tbody></table>';
+  };
+  renderDefaultersModal=function(){ var k=dfKind(); if(!k) return _rdf();
+    var o=showModal,cap=''; showModal=function(h){cap=h;}; try{_rdf();}finally{showModal=o;}
+    var i=cap.lastIndexOf('<div style="margin-top:12px;">'); if(i<0){ o(cap); return; }
+    o(cap.slice(0,i)+'<div style="margin:12px 0 6px;font-weight:700;font-size:15px">'+shYearLbl(k)+'</div><div class="tbl-wrap" style="max-height:none">'+dfTable(k)+'</div><div class="toolbar" style="margin-top:12px"><button class="btn outline sm" onclick="printDefaultersList()">🖨 پرنٹ</button></div>'); };
+  printDefaultersList=function(){ var k=dfKind(); if(!k) return _pdl(); printReport('فہرست بقایادار — '+shYearLbl(k),dfTable(k)); };
+})();
+
+/* ================= نیا اندراج: گھنے خانے ================= */
+function fsAmt(id,v){ if(v==='') delete entryDraft.amounts[id]; else entryDraft.amounts[id]=v; updateEntryTotal(); }
+(function(){
+  var _e=entryHeadsInnerHtml;
+  var FS_FIXED=['تزکیہ اموال','حصہ آمد','حصہ آمد بشرح عام','چندہ عام','جلسہ سالانہ','تحریک جدید','وقف جدید','نگر پارکر','دفتر اطفال','امانت تربیت'];
+  entryHeadsInnerHtml=function(){
+    if(!(FSX_ON&&FSX_MQ.matches)) return _e();
+    var dis=entryDraft.cancelled?'disabled':'',all=orderedEntryHeads(),norm=function(s){return (s||'').replace(/\s+/g,' ').trim();},fixed=[];
+    FS_FIXED.forEach(function(n){ var h=all.find(function(z){return norm(z.ur)===n;}); if(h) fixed.push(h); });
+    var has=function(h){return Object.prototype.hasOwnProperty.call(entryDraft.amounts,h.id);};
+    var extra=all.filter(function(h){return fixed.indexOf(h)<0&&has(h);}),rest=all.filter(function(h){return fixed.indexOf(h)<0&&!has(h);});
+    var card=function(h,x){return '<label class="fs-hc"><span>'+(LANG==='ur'?h.ur:h.en)+(x?' <a class="fs-x" onclick="fsDelHead(\''+h.id+'\')">×</a>':'')+'</span><input type="number" min="0" inputmode="decimal" id="amt_'+h.id+'" '+dis+' value="'+(entryDraft.cancelled?'':kEsc(entryDraft.amounts[h.id]||''))+'" oninput="fsAmt(\''+h.id+'\',this.value)"></label>';};
+    return '<div class="fs-hgrid">'+fixed.map(function(h){return card(h,false);}).join('')+extra.map(function(h){return card(h,true);}).join('')+'</div>'+
+      (rest.length?'<select class="fs-more" '+dis+' onchange="fsAddHead(this.value);this.value=\'\'"><option value="">➕ دیگر مد منتخب کریں...</option>'+rest.map(function(h){return '<option value="'+h.id+'">'+(LANG==='ur'?h.ur:h.en)+'</option>';}).join('')+'</select>':'');
+  };
+  /* آمد / خرچ: محفوظ کرنے پر فارم کھلا رہے */
+  function keep(name,draftName,reopen){
+    var o=window[name];
+    window[name]=function(){
+      var hit=false,d=draftName()||{},editing=!!d.editId;
+      if(!editing) window.FSX_KEEP=function(){hit=true;};
+      try{ o.apply(this,arguments); } finally{ window.FSX_KEEP=null; }
+      if(hit){ var keepD={date:d.date,headId:d.headId}; window[reopen](); setTimeout(function(){ keepD&&fsRestore(keepD); },0); }
+    };
+  }
+  window.fsRestore=function(d){
+    var set=function(id,v){var e=document.getElementById(id); if(e&&v) e.value=v;};
+    set('incDate',d.date); set('incHead',d.headId); set('expDate',d.date); set('expHead',d.headId);
+    try{ if(document.getElementById('incDate')){incomeDraft.date=d.date;incomeDraft.headId=d.headId;} if(document.getElementById('expDate')){expenseDraft.date=d.date;expenseDraft.headId=d.headId;} }catch(e){}
+    var m=document.querySelector('#modalBg .modal'),h=m&&(m.querySelector('h3')||m.querySelector('.fs-bar'));
+    if(m&&!m.querySelector('.fs-ok')){ var x=document.createElement('div'); x.className='fs-ok'; x.textContent='✅ محفوظ ہو گیا — اگلا اندراج لکھیں، ختم کرنے کے لیے واپسی/× دبائیں'; (h?h.parentNode:m).insertBefore(x,h?h.nextSibling:m.firstChild); }
+  };
+  keep('saveIncome',function(){return incomeDraft;},'openIncomeModal'); keep('saveExpense',function(){return expenseDraft;},'openExpenseModal');
+})();
+
+/* ================= تفصیلی کھاتہ جات: اضافی مدات کے ٹک ================= */
+var DKX=[['tj','تحریک جدید'],['wj','وقف جدید'],['atf','دفتر اطفال'],['nag','نگر پارکر']], DK_T={}, FSX_DKP=false;
+(function(){
+  var _psh=printSummaryHeads,_rdk=renderDK,_dkp=dkPrint,_dkv=dkView;
+  printSummaryHeads=function(){ var h=_psh(); if(FSX_DKP){ DKX.forEach(function(p){ if(DK_T[p[0]]){ var x=DB.heads.find(function(z){return (z.ur||'').indexOf(p[1])>=0;}); if(x&&h.indexOf(x)<0) h.push(x); } }); } return h; };
+  renderDK=function(){ _rdk(); var a=document.getElementById('dkAll'); if(!a) return;
+    a.parentNode.insertAdjacentHTML('afterend','<div style="display:flex;gap:6px 18px;flex-wrap:wrap;padding:2px 4px 8px;font-weight:700">'+DKX.map(function(p){return '<label class="shchk"><input type="checkbox" '+(DK_T[p[0]]?'checked':'')+' onchange="DK_T[\''+p[0]+'\']=this.checked">'+p[1]+'</label>';}).join('')+'<span style="font-weight:400;font-size:12px;color:var(--ink-soft)">ٹک والی مدات امانت تربیت کے ساتھ کھاتے میں شامل ہوں گی</span></div>'); };
+  dkPrint=function(){ FSX_DKP=true; try{ _dkp(); } finally{ FSX_DKP=false; } };
+  dkView=function(ids){ FSX_DKP=true; try{ _dkv(ids); } finally{ FSX_DKP=false; } };
+  dkViewPrint=function(){ DK_SEL=new Set(window.__dkv||[]); dkPrint(); };
+})();
+
+/* ================= ترسیل سمری: ماہ منتخب + A4 پرنٹ ================= */
+var RS_M='';
+function rsMonthTable(m){
+  var rows=getRemittanceSummaryMonths(),r=rows.filter(function(x){return x.month===m;})[0];
+  if(!r) return '<div class="empty">اس ماہ کا کوئی ڈیٹا نہیں</div>';
+  var ids=getRemittanceSummaryHeadIds([r]);
+  return '<table class="ledger"><thead><tr><th>#</th><th>مد</th><th>رقم</th></tr></thead><tbody>'+ids.map(function(h,i){return '<tr><td>'+(i+1)+'</td><td style="text-align:start">'+headLabel(h)+'</td><td>'+fmtNum(r.byHead[h]||0)+'</td></tr>';}).join('')+'<tr class="total-row"><td></td><td>میزان</td><td>'+fmtNum(r.total)+'</td></tr></tbody></table>';
+}
+openRemittanceSummaryModal=function(){
+  FSX_ON=true; var months=getRemittanceSummaryMonths().map(function(r){return r.month;});
+  if(RS_M&&months.indexOf(RS_M)<0) RS_M='';
+  showModal('<h3>ترسیل سمری</h3><label>ماہ منتخب کریں</label><select onchange="RS_M=this.value;openRemittanceSummaryModal()"><option value="">تمام ماہ</option>'+months.map(function(m){return '<option value="'+m+'" '+(RS_M===m?'selected':'')+'>'+monthLabel(m,LANG)+'</option>';}).join('')+'</select>'+
+   '<div style="margin-top:8px">'+(RS_M?'<div class="tbl-wrap" style="max-height:none">'+rsMonthTable(RS_M)+'</div>':buildRemittanceSummaryTableHtml())+'</div>'+
+   '<div class="toolbar" style="margin-top:12px"><button class="btn outline sm" onclick="copyRemittanceSummary()">📋 کاپی</button><button class="btn outline sm" onclick="shareRemittanceSummary()">📤 شیئر</button><button class="btn outline sm" onclick="printRemittanceSummary()">🖨 پرنٹ'+(RS_M?' (A4)':'')+'</button></div>');
+};
+(function(){ var _prs=printRemittanceSummary;
+  printRemittanceSummary=function(){ if(!RS_M) return _prs();
+    var n=document.querySelectorAll('#modalBg tbody tr').length;
+    executePrint('ترسیل سمری — '+monthLabel(RS_M,'ur'), rsMonthTable(RS_M), {orientation:'portrait', fontScale:n>28?0.8:(n>20?0.9:1)}); }; })();
+/* سمری: پچھلے سال کے ساتھ بجٹ تحریک جدید / وقف جدید */
+(function(){ var _rs2=renderSummary;
+  renderSummary=function(){ return _rs2().replace(/(openPreviousYearsModal\(\)">[^<]*<\/button>)/, '$1<button class="ib c-green" data-s="بجٹ تحریک جدید" title="بجٹ تحریک جدید" onclick="openShamileen(\'tj\')">🌱</button><button class="ib c-blue" data-s="بجٹ وقف جدید" title="بجٹ وقف جدید" onclick="openShamileen(\'wj\')">🕌</button>'); }; })();
+
+/* ================= Enter = اگلا خانہ ================= */
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter'||e.shiftKey||e.ctrlKey) return; var t=e.target; if(!t||!t.closest||!/^(INPUT|SELECT)$/.test(t.tagName)) return;
+  var m=t.closest('#modalBg .modal'); if(!m||t.type==='checkbox'||t.type==='button'||t.type==='submit'||t.id==='entryKhataSearch') return;
+  var f=Array.prototype.filter.call(m.querySelectorAll('input,select,textarea'),function(x){return !x.disabled&&x.type!=='hidden'&&x.type!=='checkbox'&&x.offsetParent!==null;});
+  var i=f.indexOf(t); if(i<0||i===f.length-1) return; e.preventDefault(); f[i+1].focus(); if(f[i+1].select&&f[i+1].type!=='date') try{f[i+1].select();}catch(x){}
+},true);
+
+/* ================= روزنامچہ: بغیر بذریعہ شامل کو بجٹ نمبر سے جوڑنا ================= */
+function smFind(no){ no=String(no||'').trim(); if(!no) return []; return SH().list.filter(function(m){return !m.via&&String(m.no).trim()===no;}); }
+(function(){
+  var _re=renderEntryModal,_se=saveEntry;
+  renderEntryModal=function(){ _re(); var inp=document.getElementById('entryManualName'); if(!inp||!entryDraft.manual) return;
+    inp.insertAdjacentHTML('afterend','<label>بجٹ نمبر (تحریک جدید / وقف جدید کا بغیر بذریعہ شامل — اختیاری)</label><input type="text" id="entrySmNo" value="'+kEsc(entryDraft.smNo||'')+'" oninput="smPick(this.value)"><div id="entrySmInfo" style="font-size:12.5px;color:var(--ink-soft);margin:2px 0 6px">'+smInfo(entryDraft.smNo)+'</div>'); };
+  saveEntry=function(){ var no=entryDraft.smNo,man=entryDraft.manual,n=DB.entries.length; _se.apply(this,arguments);
+    if(man&&no&&DB.entries.length>n){ DB.entries[DB.entries.length-1].smNo=String(no).trim(); saveDB(); } };
+})();
+function smInfo(no){ var f=smFind(no); return no?(f.length?f.map(function(m){return '✔ '+kEsc(m.name)+' ('+SHK[m.kind]+')';}).join('، '):'⚠ اس بجٹ نمبر کا کوئی بغیر بذریعہ شامل نہیں ملا'):''; }
+function smPick(v){ entryDraft.smNo=v; var f=smFind(v); if(f.length){ entryDraft.manualName=f[0].name; var n=document.getElementById('entryManualName'); if(n) n.value=f[0].name; } var i=document.getElementById('entrySmInfo'); if(i) i.innerHTML=smInfo(v); }
+
+/* ================= شاملین رپورٹ / فارم: چھوٹے خانے ================= */
+(function(){ var _r=renderShReport,_f=renderShForm,_l=renderShamileen;
+  renderShReport=function(){ _r(); var m=document.querySelector('#modalBg .modal'); if(m) m.classList.add('fs-compact'); };
+  renderShForm=function(x){ _f(x); var m=document.querySelector('#modalBg .modal'); if(m) m.classList.add('fs-compact'); };
+  renderShamileen=function(){ _l(); var m=document.querySelector('#modalBg .modal'); if(m) m.classList.add('fs-compact'); };
+})();
+
+/* ================= لوکل خرچ / آمد رپورٹ ================= */
+var LR={kind:'exp',month:''};
+function openLocalReport(){ renderLocalReport(); }
+function lrData(){
+  var isE=LR.kind==='exp',arr=(isE?DB.expenses:DB.incomeEntries)||[],heads=(isE?DB.expenseHeads:DB.incomeHeads)||[];
+  var mo=function(x){return x.month||toMonth(x.date);};
+  var months=Array.from(new Set(arr.map(mo))).sort().reverse(); if(!LR.month||months.indexOf(LR.month)<0) LR.month=months[0]||'';
+  var rows={}; arr.filter(function(x){return mo(x)===LR.month;}).forEach(function(x){ var k=x.headId||''; if(!rows[k]) rows[k]={n:0,s:0}; rows[k].n++; rows[k].s+=+x.amount||0; });
+  var list=Object.keys(rows).map(function(id){var h=heads.find(function(z){return z.id===id;}); return {name:h?(h.ur||h.en):'متفرق',n:rows[id].n,s:rows[id].s};}).sort(function(a,b){return b.s-a.s;});
+  return {months:months,list:list};
+}
+function lrTable(){ var d=lrData(),t=0,c=0; if(!d.list.length) return '<div class="empty">اس ماہ کا کوئی ریکارڈ نہیں</div>';
+  return '<table class="ledger"><thead><tr><th>#</th><th>مد</th><th>تعداد</th><th>رقم</th></tr></thead><tbody>'+d.list.map(function(r,i){t+=r.s;c+=r.n;return '<tr><td>'+(i+1)+'</td><td style="text-align:start">'+kEsc(r.name)+'</td><td>'+r.n+'</td><td>'+fmtNum(r.s)+'</td></tr>';}).join('')+'<tr class="total-row"><td></td><td>میزان</td><td>'+c+'</td><td>'+fmtNum(t)+'</td></tr></tbody></table>'; }
+function lrTitle(){ return (LR.kind==='exp'?'مدوار اخراجات':'مدوار آمد')+' — '+(LR.month?monthLabel(LR.month,'ur'):''); }
+function renderLocalReport(){
+  var d=lrData();
+  showModal('<h3>🧾 لوکل خرچ رپورٹ</h3><div class="pill-row"><button class="pill '+(LR.kind==='exp'?'active':'')+'" onclick="LR.kind=\'exp\';LR.month=\'\';renderLocalReport()">مدوار اخراجات (ماہ)</button><button class="pill '+(LR.kind==='inc'?'active':'')+'" onclick="LR.kind=\'inc\';LR.month=\'\';renderLocalReport()">مدوار آمد (ماہ)</button></div>'+
+   '<label>ماہ</label><select style="max-width:260px" onchange="LR.month=this.value;renderLocalReport()">'+d.months.map(function(m){return '<option value="'+m+'" '+(LR.month===m?'selected':'')+'>'+monthLabel(m,'ur')+'</option>';}).join('')+'</select>'+
+   '<div class="tbl-wrap" style="margin-top:8px;max-height:none">'+lrTable()+'</div><div class="toolbar" style="margin-top:12px"><button class="btn sm" onclick="printReport(lrTitle(),lrTable())">🖨 پرنٹ</button><button class="btn outline sm" onclick="downloadReportCsv(lrTitle(),lrTable())">📊 Excel شیٹ</button></div>');
+  var m=document.querySelector('#modalBg .modal'); if(m) m.classList.add('fs-compact');
+}
+
+function fsAddHead(id){ if(!id) return; entryDraft.amounts[id]=''; refreshEntryHeads(); updateEntryTotal(); setTimeout(function(){ var e=document.getElementById('amt_'+id); if(e) e.focus(); },30); }
+function fsDelHead(id){ delete entryDraft.amounts[id]; refreshEntryHeads(); updateEntryTotal(); }
+function fsOkMsg(t){ var m=document.querySelector('#modalBg .modal'); if(!m) return; var x=document.createElement('div'); x.className='fs-ok'; x.textContent=t; var h=m.querySelector('h3'); (h?h.parentNode:m).insertBefore(x,h?h.nextSibling:m.firstChild); }
+
+/* ================= نیا کھاتہ: چھوٹے خانے + محفوظ کے بعد کھلا رہے ================= */
+function khataGroup(){
+  if(!FSX_MQ.matches) return; var m=document.querySelector('#modalBg .modal'); if(!m||!document.getElementById('kNumberInput')) return;
+  m.classList.add('fs-khata'); var kids=Array.prototype.slice.call(m.children);
+  for(var i=0;i<kids.length;i++){ var e=kids[i]; if(e.tagName!=='LABEL') continue; if(e.style.marginTop) break;
+    var nx=kids[i+1]; if(nx&&/^(INPUT|SELECT)$/.test(nx.tagName)){ var w=document.createElement('div'); w.className='kf'; m.insertBefore(w,e); w.appendChild(e); w.appendChild(nx); i++; } }
+}
+(function(){ var _sk=saveKhata,_rk=renderKhataModal;
+  renderKhataModal=function(a,b,c,d){ _rk(a,b,c,d); khataGroup(); };
+  saveKhata=function(editId){ var hit=false,nm=''; if(!editId){ nm=(document.getElementById('kNameUr')||{}).value||''; window.FSX_KEEP=function(){hit=true;}; }
+    try{ _sk.apply(this,arguments); } finally{ window.FSX_KEEP=null; }
+    if(hit){ openKhataModal(); setTimeout(function(){ fsOkMsg('✅ '+nm+' — کھاتہ محفوظ ہو گیا، اگلا کھاتہ لکھیں (بند کرنے کے لیے واپسی / ختم)'); var f=document.getElementById('kNameUr'); if(f) f.focus(); },40); } };
+})();
+
+/* ================= لوکل خرچ رپورٹ: خوبصورت کارڈ + سالانہ ================= */
+(function(){
+  var _d=lrData; 
+  lrData=function(){ if(LR.kind.charAt(0)!=='y') return _d();
+    var isE=LR.kind==='yexp',arr=(isE?DB.expenses:DB.incomeEntries)||[],heads=(isE?DB.expenseHeads:DB.incomeHeads)||[],rows={};
+    arr.forEach(function(x){ var k=x.headId||''; if(!rows[k]) rows[k]={n:0,s:0}; rows[k].n++; rows[k].s+=+x.amount||0; });
+    return {months:[],list:Object.keys(rows).map(function(id){var h=heads.find(function(z){return z.id===id;}); return {name:h?(h.ur||h.en):'متفرق',n:rows[id].n,s:rows[id].s};}).sort(function(a,b){return b.s-a.s;})}; };
+  lrTitle=function(){ var K={exp:'مدوار اخراجات',inc:'مدوار آمد',yinc:'سالانہ آمد — مدوار',yexp:'سالانہ مدوار خرچ'}; return K[LR.kind]+' — '+(LR.kind.charAt(0)==='y'?('سال '+(DB.fiscalYear||'')):(LR.month?monthLabel(LR.month,'ur'):'')); };
+  renderLocalReport=function(){
+    var d=lrData(),y=LR.kind.charAt(0)==='y',C=[['exp','💸','مدوار اخراجات','ماہ وار','c1'],['inc','💰','مدوار آمد','ماہ وار','c2'],['yinc','📈','سالانہ آمد','پورے سال کی مدوار','c3'],['yexp','📉','سالانہ مدوار خرچ','پورے سال کا مدوار','c4']];
+    showModal('<h3>🧾 لوکل خرچ رپورٹ</h3><div class="lr-cards">'+C.map(function(c){return '<button class="lr-card '+c[4]+(LR.kind===c[0]?' on':'')+'" onclick="LR.kind=\''+c[0]+'\';LR.month=\'\';renderLocalReport()"><span class="lri">'+c[1]+'</span><b>'+c[2]+'</b><small>'+c[3]+'</small></button>';}).join('')+'</div>'+
+     (y?'<div style="font-weight:700;margin:8px 0">'+lrTitle()+'</div>':'<label>ماہ</label><select style="max-width:260px" onchange="LR.month=this.value;renderLocalReport()">'+d.months.map(function(m){return '<option value="'+m+'" '+(LR.month===m?'selected':'')+'>'+monthLabel(m,'ur')+'</option>';}).join('')+'</select>')+
+     '<div class="tbl-wrap" style="margin-top:8px;max-height:none">'+lrTable()+'</div><div class="toolbar" style="margin-top:12px"><button class="btn sm" onclick="printReport(lrTitle(),lrTable())">🖨 پرنٹ</button><button class="btn outline sm" onclick="downloadReportCsv(lrTitle(),lrTable())">📊 Excel شیٹ</button></div>');
+    var m=document.querySelector('#modalBg .modal'); if(m) m.classList.add('fs-compact');
+  };
+})();
+
 </script>
 </body>
 </html>
