@@ -8647,6 +8647,26 @@ body.dark #acBox .ac-item:hover,body.dark #acBox .ac-item:active{background:#2f4
 .fs-khata .kf label{margin:3px 0 1px;font-size:11.5px;display:block}
 .fs-khata .kf input,.fs-khata .kf select{padding:3px 8px;height:30px;font-size:13px}
 }
+
+.fs-bar .tb{display:flex;gap:6px;align-items:center}
+.fs-bar .tb button{background:rgba(255,255,255,.95) !important;color:#123524 !important;border:0 !important;border-radius:9px;padding:6px 13px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.fs-bar .tb button:hover{background:#ffe9a8 !important}
+.fs-sel{max-width:190px;height:30px;padding:2px 8px !important;border-radius:9px;font-size:13px}
+.lr-amt{font-size:21px;font-weight:700;line-height:1.2}
+.ent-top{flex:1 1 100% !important;display:flex;align-items:flex-end;gap:16px}
+.ent-top .toggle-row{flex:0 0 auto;margin:0 !important}
+.ent-top .kw{flex:0 0 300px}
+.def-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:4px 0 8px}
+.def-row .dc{display:flex;flex-direction:column;gap:2px;position:relative}
+.def-row .dl{font-size:11.5px;color:var(--ink-soft)}
+.def-row select{max-width:230px;height:30px;padding:2px 8px;font-size:13px}
+.def-row input[type=date]{width:140px;height:30px;padding:2px 6px;font-size:12.5px}
+.def-row .pill-row{margin:0 !important;overflow:visible !important}
+.def-row .hd-dd-btn{height:30px;padding:2px 12px;font-size:13px}
+.modal-bg.fs .hd-dd{position:relative}
+.modal-bg.fs .hd-dd-panel{position:absolute !important;top:100%;inset-inline-start:0;z-index:80;width:300px;max-height:62vh;overflow:auto;background:#fff;border:1px solid var(--rule);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.28)}
+.hd-done{border:0;background:#123524;color:#fff;border-radius:8px;padding:3px 12px;cursor:pointer;margin-inline-start:6px}
+.modal.fs-khata>.toggle-row{grid-column:span 2 !important}
 </style>
 <script id="fsShamileenScript">
 /* ================= FS windows, شاملین (تحریک جدید / وقف جدید), DK open ================= */
@@ -8655,9 +8675,9 @@ var FSX_ON=false, FSX_MQ=window.matchMedia('(min-width:900px)');
   var _sm=showModal,_cm=closeModal,_pr=printReport;
   showModal=function(h){ _sm(h); var bg=document.getElementById('modalBg'); if(!bg) return;
     var on=FSX_ON&&FSX_MQ.matches; bg.classList.toggle('fs',on);
-    if(on){ var m=bg.querySelector('.modal'),h3=m.querySelector('h3'); 
+    if(on){ var m=bg.querySelector('.modal'),h3=m.querySelector('h3'); var ttl=h3?h3.textContent:''; 
       m.insertAdjacentHTML('afterbegin','<div class="fs-bar"><button onclick="closeModal()">↩ واپسی</button><b>'+kEsc(h3?h3.textContent:'')+'</b><button class="x" onclick="closeModal()">✕ ختم</button></div>');
-      if(h3) h3.style.display='none'; if(/entryHeadsWrap/.test(h)) m.classList.add('fs-dense'); }
+      if(h3) h3.style.display='none'; if(/entryHeadsWrap/.test(h)) m.classList.add('fs-dense'); if(/ترسیل سمری|رسید بک|اسم وار|تفصیلی کھاتہ جات|بقایادار|لوکل خرچ/.test(ttl)) fsTopTb(m); }
     if(/class="cf-sec"/.test(h)){ var mm=bg.querySelector('.modal'); if(mm) mm.classList.add('cf-compact'); } };
   closeModal=function(){ if(window.FSX_KEEP){ window.FSX_KEEP(); return; } FSX_ON=false; _cm(); };
   printReport=function(){ FSX_ON=false; return _pr.apply(this,arguments); };
@@ -9048,6 +9068,114 @@ function khataGroup(){
     var m=document.querySelector('#modalBg .modal'); if(m) m.classList.add('fs-compact');
   };
 })();
+
+/* ================= بالائی آئیکن بٹن (پرنٹ / شیئر ...) ================= */
+function fsTopTb(m){
+  var tbs=m.querySelectorAll(':scope>.toolbar'),tbx=tbs[tbs.length-1]; if(!tbx) return;
+  var bx=document.createElement('div'); bx.className='tb'; while(tbx.firstChild) bx.appendChild(tbx.firstChild); tbx.remove();
+  var xb=m.querySelector('.fs-bar button.x'); if(xb) xb.parentNode.insertBefore(bx,xb);
+}
+
+/* ================= نیا اندراج: اوپر کی قطار چھوٹی ================= */
+(function(){ var _re2=renderEntryModal;
+  renderEntryModal=function(){ _re2(); var m=document.querySelector('#modalBg .modal'); if(!m||!m.classList.contains('fs-dense')) return;
+    var tg=m.querySelector(':scope>.toggle-row'); if(!tg) return; var l=tg.nextElementSibling,c=l&&l.nextElementSibling; if(!l||l.tagName!=='LABEL'||!c) return;
+    var top=document.createElement('div'); top.className='ent-top'; m.insertBefore(top,tg); top.appendChild(tg);
+    var kw=document.createElement('div'); kw.className='kw'; kw.appendChild(l); kw.appendChild(c); top.appendChild(kw);
+    var tl=tg.querySelector('label'); if(tl) tl.textContent='بغیر کھاتہ — نام درج کریں'; };
+})();
+
+/* ================= فہرست بقایا دار: چھوٹی قطار + ہیڈز اوپر پاپ اپ ================= */
+(function(){ var _rd3=renderDefaultersModal;
+  renderDefaultersModal=function(){ _rd3(); if(!FSX_MQ.matches) return; var m=document.querySelector('#modalBg .modal'); if(!m) return;
+    var sel=m.querySelector(':scope>select'),hdRow=m.querySelector(':scope>.pill-row'); if(!sel||!hdRow) return;
+    var dateDiv=sel.nextElementSibling&&sel.nextElementSibling.nextElementSibling; if(!dateDiv||!dateDiv.querySelector('input[type=date]')) return;
+    var labels=m.querySelectorAll(':scope>label'); var row=document.createElement('div'); row.className='def-row'; m.insertBefore(row,labels[0]);
+    var mk=function(t,el){ var d=document.createElement('div'); d.className='dc'; var s=document.createElement('span'); s.className='dl'; s.textContent=t; d.appendChild(s); d.appendChild(el); row.appendChild(d); };
+    mk('مد / ہیڈز',hdRow); mk('کھاتہ',sel); mk('📅 تاریخ سے — تک',dateDiv);
+    Array.prototype.forEach.call(labels,function(x){ x.remove(); });
+    var hint=m.querySelector('.hd-dd-hint'); if(hint&&!hint.querySelector('.hd-done')) hint.insertAdjacentHTML('beforeend',' <button type="button" class="hd-done" onclick="toggleHdDD(event)">✔ مکمل</button>');
+  };
+})();
+
+/* ================= دیگر فارم: چھوٹے خانے ================= */
+(function(){
+  var cmp=function(fn){ var o=window[fn]; if(typeof o!=='function') return; window[fn]=function(){ var r=o.apply(this,arguments); var m=document.querySelector('#modalBg .modal'); if(m) m.classList.add('fs-compact'); return r; }; };
+  ['renderMuhassilBookModal','renderNamewiseModal','renderDK'].forEach(cmp);
+  var _rdk2=renderDK; renderDK=function(){ _rdk2(); var i=document.querySelector('#modalBg input[oninput*="DK_Q"]'); if(i) i.style.maxWidth='320px'; };
+  /* ترسیل سمری */
+  openRemittanceSummaryModal=function(){
+    FSX_ON=true; var months=getRemittanceSummaryMonths().map(function(r){return r.month;}); if(RS_M&&months.indexOf(RS_M)<0) RS_M='';
+    showModal('<h3>ترسیل سمری</h3><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px">📅 ماہ:</span><select class="fs-sel" onchange="RS_M=this.value;openRemittanceSummaryModal()"><option value="">تمام ماہ</option>'+months.map(function(m){return '<option value="'+m+'" '+(RS_M===m?'selected':'')+'>'+monthLabel(m,LANG)+'</option>';}).join('')+'</select></div>'+
+     '<div style="margin-top:8px">'+(RS_M?'<div class="tbl-wrap" style="max-height:none">'+rsMonthTable(RS_M)+'</div>':buildRemittanceSummaryTableHtml())+'</div>'+
+     '<div class="toolbar"><button class="btn outline sm" onclick="copyRemittanceSummary()">📋 کاپی</button><button class="btn outline sm" onclick="shareRemittanceSummary()">📤 شیئر</button><button class="btn outline sm" onclick="printRemittanceSummary()">🖨 پرنٹ'+(RS_M?' (A4)':'')+'</button></div>');
+    var m=document.querySelector('#modalBg .modal'); if(m) m.classList.add('fs-compact');
+  };
+  window.openRemittanceSummaryModal=(function(o){ return function(){ FSX_ON=true; return o.apply(this,arguments); }; })(openRemittanceSummaryModal);
+})();
+
+/* ================= تفصیلات کیش: چھوٹے خانے، حصہ الف میں 3 قطاریں ================= */
+var CF_SHOW={};
+function cfMoreA(){ var f=cashFormGet(cashFormMonth); CF_SHOW[cashFormMonth]=Math.max(3,CF_SHOW[cashFormMonth]||3)+1; if(CF_SHOW[cashFormMonth]>f.a.length) cfAddRow('a'); else renderCashModal(); }
+(function(){ var _rc=renderCashModal;
+  renderCashModal=function(){ _rc(); var m=document.querySelector('#modalBg .modal'); if(!m||!FSX_MQ.matches) return;
+    var f=cashFormGet(cashFormMonth),last=-1; f.a.forEach(function(r,i){ if(r.bank||r.date||r.slip||r.amt||r.note) last=i; });
+    var sh=Math.max(3,last+1,CF_SHOW[cashFormMonth]||0); CF_SHOW[cashFormMonth]=sh;
+    var t1=m.querySelector('table.ledger'); if(t1) Array.prototype.forEach.call(t1.querySelectorAll('tbody tr'),function(tr,i){ if(i>=sh) tr.style.display='none'; });
+    var pb=m.querySelector('button[onclick="cfAddRow(\'a\')"]'); if(pb) pb.setAttribute('onclick','cfMoreA()');
+    var am=m.querySelector('input[oninput*="\'ameen\'"]'); var top=m.querySelector(':scope>div[style*="display:flex"]');
+    if(am&&top){ var holder=am.parentNode.parentNode; while(holder.firstChild) top.appendChild(holder.firstChild); holder.remove();
+      Array.prototype.forEach.call(top.children,function(d){ d.style.flex='1 1 120px'; d.style.minWidth='110px'; }); }
+  };
+})();
+
+/* ================= لوکل خرچ رپورٹ: کارڈ میں میزان، تفصیل نیچے ================= */
+function lrArr(k){ return ((k==='exp'||k==='yexp')?DB.expenses:DB.incomeEntries)||[]; }
+function lrMonths(){ var s={}; (DB.expenses||[]).concat(DB.incomeEntries||[]).forEach(function(x){ s[x.month||toMonth(x.date)]=1; }); return Object.keys(s).sort().reverse(); }
+function lrSum(k){ var y=k.charAt(0)==='y'; return lrArr(k).filter(function(x){return y||(x.month||toMonth(x.date))===LR.month;}).reduce(function(s,x){return s+(+x.amount||0);},0); }
+lrData=function(){ var k=LR.kind,y=k.charAt(0)==='y',isE=(k==='exp'||k==='yexp'),heads=(isE?DB.expenseHeads:DB.incomeHeads)||[],rows={};
+  lrArr(k).filter(function(x){return y||(x.month||toMonth(x.date))===LR.month;}).forEach(function(x){ var h=x.headId||''; if(!rows[h]) rows[h]={n:0,s:0}; rows[h].n++; rows[h].s+=+x.amount||0; });
+  return {months:lrMonths(),list:Object.keys(rows).map(function(id){var h=heads.find(function(z){return z.id===id;}); return {name:h?(h.ur||h.en):'متفرق',n:rows[id].n,s:rows[id].s};}).sort(function(a,b){return b.s-a.s;})}; };
+(function(){ var _ol=openLocalReport; openLocalReport=function(){ LR.kind=''; return _ol(); }; })();
+renderLocalReport=function(){
+  var ms=lrMonths(); if(!LR.month||ms.indexOf(LR.month)<0) LR.month=ms[0]||'';
+  var C=[['exp','💸','مدوار اخراجات','c1','ماہ کا میزان'],['inc','💰','مدوار آمد','c2','ماہ کا میزان'],['yinc','📈','سالانہ آمد','c3','پورے سال کا میزان'],['yexp','📉','سالانہ مدوار خرچ','c4','پورے سال کا میزان']];
+  var cards=C.map(function(c){return '<button class="lr-card '+c[3]+(LR.kind===c[0]?' on':'')+'" onclick="LR.kind=\''+c[0]+'\';renderLocalReport()"><span class="lri">'+c[1]+'</span><b>'+c[2]+'</b><span class="lr-amt">'+fmtNum(lrSum(c[0]))+'</span><small>'+c[4]+'</small></button>';}).join('');
+  var det=LR.kind?'<div style="font-weight:700;margin:12px 0 4px">'+lrTitle()+'</div><div class="tbl-wrap" style="max-height:none">'+lrTable()+'</div>':'<div class="note" style="margin-top:10px">تفصیل دیکھنے کے لیے کسی کارڈ پر کلک کریں</div>';
+  showModal('<h3>🧾 لوکل خرچ رپورٹ</h3><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px">📅 ماہ:</span><select class="fs-sel" onchange="LR.month=this.value;renderLocalReport()">'+ms.map(function(m){return '<option value="'+m+'" '+(LR.month===m?'selected':'')+'>'+monthLabel(m,'ur')+'</option>';}).join('')+'</select></div><div class="lr-cards">'+cards+'</div>'+det+
+   (LR.kind?'<div class="toolbar"><button class="btn outline sm" onclick="printReport(lrTitle(),lrTable())">🖨 پرنٹ</button><button class="btn outline sm" onclick="downloadReportCsv(lrTitle(),lrTable())">📊 Excel</button></div>':''));
+  var m=document.querySelector('#modalBg .modal'); if(m) m.classList.add('fs-compact');
+};
+
+/* ================= انسٹال / ان انسٹال ڈیٹا ================= */
+requireBackupThenInstall=function(){ if(!requireAdminRole()) return; triggerPwaInstall(); };
+function allDataHtml(){
+  var nm=function(k){return k?(k.name_ur||k.name_en):'';},T=function(title,head,rows){return '<table><tr><th colspan="'+head.length+'">'+title+'</th></tr><tr>'+head.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr>'+rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+kEsc(String(c==null?'':c))+'</td>';}).join('')+'</tr>';}).join('')+'</table><br>';};
+  var hn=function(id){var h=DB.heads.find(function(x){return x.id===id;}); return h?h.ur:'';};
+  var h='<div>'+T('کھاتہ جات',['نمبر','نام','ولدیت','علاقہ','فون','سابقہ بقایا','بجٹ سال رواں'],DB.khatas.slice().sort(function(a,b){return a.number-b.number;}).map(function(k){return [k.number,nm(k),k.rel_ur,k.area,k.phone,k.prevBalance||0,k.budgetYear||0];}));
+  h+=T('روزنامچہ اندراجات',['تاریخ','رسید نمبر','کتاب','نام','مدات','میزان'],DB.entries.map(function(e){var tot=0,hs=[]; Object.keys(e.amounts||{}).forEach(function(id){tot+=+e.amounts[id]||0; hs.push(hn(id)+':'+e.amounts[id]);}); return [e.date,e.receiptNo,e.bookNo,e.khataId?nm(DB.khatas.find(function(k){return k.id===e.khataId;})):e.manualName,hs.join('، '),tot];}));
+  h+=T('آمد',['تاریخ','مد','تفصیل','رقم'],(DB.incomeEntries||[]).map(function(x){var hh=(DB.incomeHeads||[]).find(function(z){return z.id===x.headId;}); return [x.date,hh?hh.ur:'',x.detail,x.amount];}));
+  h+=T('اخراجات',['تاریخ','مد','تفصیل','رقم'],(DB.expenses||[]).map(function(x){var hh=(DB.expenseHeads||[]).find(function(z){return z.id===x.headId;}); return [x.date,hh?hh.ur:'',x.detail,x.amount];}));
+  h+=T('شاملین تحریک جدید / وقف جدید',['مد','نام','والد','بذریعہ','بجٹ نمبر','دفتر','تنظیم','بجٹ','اضافی بجٹ'],SH().list.map(function(m){return [SHK[m.kind],m.name,m.father,m.via?shKName(m.via):'براہ راست',m.no,m.daftar,m.tanzeem,m.budget,m.extra||0];}));
+  return h+'</div>';
+}
+async function exportAllDataBeforeUninstall(){
+  if(!requireAdminRole()) return; var h=allDataHtml(),t='RoznamchaMaal_AllData_'+todayStr();
+  try{ downloadReportCsv(t,h); }catch(e){}
+  try{ await downloadReportPdf(t,h); }catch(e){}
+  try{ await downloadBackupNow(); }catch(e){}
+  alert('مکمل ڈیٹا Excel اور PDF (اور بیک اپ فائل) میں ڈاؤن لوڈ ہو گیا۔ اب آپ ایپ ان انسٹال کر سکتے ہیں۔');
+}
+(function(){ var _rs3=renderSettingsModal;
+  renderSettingsModal=function(){ _rs3(); var b=document.querySelector('#modalBg [onclick="requireBackupThenInstall()"]'); if(b&&!document.getElementById('fsUninstBtn')) b.insertAdjacentHTML('afterend','<button id="fsUninstBtn" class="btn outline sm" style="width:100%;margin-top:8px" onclick="exportAllDataBeforeUninstall()">📦 ایپ ہٹانے سے پہلے — مکمل ڈیٹا Excel + PDF</button>'); };
+})();
+/* انسٹال کے بعد ایک دفعہ: فولڈر لنک کرنے کا پیغام */
+(function(){ var n=0,tm=setInterval(function(){ n++; if(n>90){ clearInterval(tm); return; }
+  try{ if(localStorage.getItem('fs_folder_asked')){ clearInterval(tm); return; } if(!isStandaloneMode()){ return; } if(backupDirHandle){ localStorage.setItem('fs_folder_asked','1'); clearInterval(tm); return; }
+    if(typeof sessionIsUnlocked==='function'&&!sessionIsUnlocked()) return; if(document.getElementById('modalBg')) return;
+    localStorage.setItem('fs_folder_asked','1'); clearInterval(tm);
+    showModal('<h3>📁 بیک اپ فولڈر</h3><div class="note">ایپ انسٹال ہو گئی ہے۔ کیا آپ بیک اپ کے لیے فولڈر لنک کرنا چاہتے ہیں؟ (یہ پیغام صرف ایک دفعہ آئے گا؛ بعد میں سیٹنگز سے بھی لنک کیا جا سکتا ہے)</div><button class="btn block" onclick="closeModal();connectBackupFolder()">📁 ہاں، فولڈر لنک کریں</button><button class="btn outline block" style="margin-top:8px" onclick="closeModal()">ابھی نہیں</button>');
+  }catch(e){} },2000); })();
 
 </script>
 </body>
