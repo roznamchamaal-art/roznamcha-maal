@@ -8733,6 +8733,51 @@ body.dark #acBox .ac-item:hover,body.dark #acBox .ac-item:active{background:#2f4
 .rs-panel .shchk{display:flex;margin:4px 0}
 .ent-top .kw{flex:0 0 210px !important}.ent-top .kw.sm{flex:0 0 130px !important}
 @media(min-width:900px){.modal.fs-dense>.row2,.modal.fs-dense>.toggle-row{min-width:250px}.modal.fs-dense .row2 input,.modal.fs-dense .row2 select{max-width:140px}}
+
+/* ================= Glassmorphism (نرم رنگ) ================= */
+:root{--glass:rgba(255,255,255,.58);--glass-b:rgba(255,255,255,.78);--gsh:0 8px 30px rgba(60,85,120,.13)}
+body{background:radial-gradient(1100px 600px at 90% -10%,#d9eee3 0,transparent 60%),radial-gradient(900px 520px at 0% 25%,#dbe6f6 0,transparent 55%),linear-gradient(135deg,#eef4f1,#ebe8f5 60%,#f7efe5) fixed !important}
+header.top{position:sticky !important;top:6px;z-index:1000;background:linear-gradient(135deg,rgba(40,104,82,.86),rgba(58,122,152,.82)) !important;-webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);border:1px solid rgba(255,255,255,.4) !important;box-shadow:0 8px 26px rgba(40,80,90,.22)}
+.card,.modal{background:var(--glass) !important;-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);border:1px solid var(--glass-b) !important;box-shadow:var(--gsh) !important}
+.card{border-radius:22px !important}
+.modal{background:rgba(255,255,255,.78) !important}
+.modal-bg{background:rgba(70,92,120,.26) !important;-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+.modal-bg.fs{background:linear-gradient(135deg,#eaf3ef,#e8eef8 60%,#f4ecf6) !important}
+.modal-bg.fs .modal{background:transparent !important;border:0 !important;box-shadow:none !important;backdrop-filter:none}
+.modal-bg.fs .fs-bar{background:linear-gradient(135deg,rgba(40,104,82,.88),rgba(58,122,152,.84)) !important;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.nav-dd.open .desktop-tabs{z-index:1300 !important;background:rgba(255,255,255,.86) !important;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid var(--glass-b);box-shadow:0 16px 40px rgba(40,60,90,.28);animation:fsDD .18s ease-out}
+@keyframes fsDD{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.hd-dd-panel,.rs-panel{animation:fsDD .15s ease-out;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);background:rgba(255,255,255,.9) !important}
+.dash-card,.sum-tile,.sh-tile,.ov-card,.lr-card{background:var(--glass) !important;-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);border:1px solid var(--glass-b) !important;border-radius:20px !important;box-shadow:var(--gsh) !important;color:#2c3e50 !important;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.dash-card:hover,.sum-tile:hover,.ov-card:hover,.lr-card:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(60,85,120,.2) !important}
+.dash-card::before,.sum-tile::before,.sh-tile::before,.ov-card::before,.lr-card::before{content:'';position:absolute;inset-inline-start:0;top:12%;bottom:12%;width:4px;border-radius:4px;background:var(--c,#4f78c4)}
+.dash-card .n,.sum-tile .n,.sh-tile b,.ov-card b,.lr-amt,.lr-card b{color:var(--c,#2c3e50) !important}
+.dash-card .l,.sum-tile .l,.sh-tile span,.ov-card small,.ov-card em,.lr-card small{color:#5b6b7b !important}
+.dash-card:nth-child(1),.sum-tile:nth-child(1),.sh-tiles .sh-tile:nth-child(1),.ov-card.o1,.lr-card.c1{--c:#3f9c7b}
+.dash-card:nth-child(2),.sum-tile:nth-child(2),.sh-tiles .sh-tile:nth-child(2),.ov-card.o2,.lr-card.c2{--c:#4f78c4}
+.dash-card:nth-child(3),.sum-tile:nth-child(3),.sh-tiles .sh-tile:nth-child(3),.ov-card.o3,.lr-card.c3{--c:#8f78c4}
+.dash-card:nth-child(4),.sum-tile:nth-child(4),.sh-tiles .sh-tile:nth-child(4),.ov-card.o4,.lr-card.c4{--c:#d9736c}
+.dash-card:nth-child(5),.sum-tile:nth-child(5),.ov-card.o5{--c:#5fb0d9}
+.dash-card:nth-child(6),.sum-tile:nth-child(6),.ov-card.o6{--c:#dfae3f}
+.sum-tile.tj{--c:#3f9c7b}.sum-tile.wj{--c:#5fb0d9}
+.dash-card:nth-child(n),.sum-tile:nth-child(n),.sh-tiles .sh-tile:nth-child(n),.ov-card.o1,.ov-card.o2,.ov-card.o3,.ov-card.o4,.ov-card.o5,.ov-card.o6,.sum-tile.tj,.sum-tile.wj,.lr-card.c1,.lr-card.c2,.lr-card.c3,.lr-card.c4{background:var(--glass) !important}
+.dash-card::after{position:absolute;top:8px;inset-inline-end:10px;font-size:20px;opacity:.85}
+.dash-card:nth-child(1)::after{content:'💰'}.dash-card:nth-child(2)::after{content:'📅'}.dash-card:nth-child(3)::after{content:'👥'}.dash-card:nth-child(4)::after{content:'⏳'}.dash-card:nth-child(5)::after{content:'🧾'}.dash-card:nth-child(6)::after{content:'🏦'}
+.lr-card.on{outline:2px solid var(--c);transform:translateY(-2px)}
+.sh-tile input{background:rgba(255,255,255,.8) !important}
+.fsb-new{--c:#3f9c7b}.fsb-rep{--c:#4f78c4}.fsb-sum{--c:#8f78c4}.fsb-exp{--c:#d5a431}.fsb-prn{--c:#4fa6d4}.fsb-del{--c:#d9645c}
+[class*="fsb-"]{background:color-mix(in srgb,var(--c) 15%,rgba(255,255,255,.6)) !important;color:color-mix(in srgb,var(--c) 72%,#1d2b3a) !important;border:1px solid color-mix(in srgb,var(--c) 42%,white) !important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 3px 10px color-mix(in srgb,var(--c) 16%,transparent) !important;border-radius:14px !important;transition:all .2s ease !important}
+[class*="fsb-"]:hover{background:color-mix(in srgb,var(--c) 28%,rgba(255,255,255,.65)) !important;transform:translateY(-2px);box-shadow:0 8px 18px color-mix(in srgb,var(--c) 24%,transparent) !important}
+.dash-act .ico{background:color-mix(in srgb,var(--c) 22%,white) !important}
+.fs-bar .tb button{border-radius:12px !important}
+.ledger tbody tr:nth-child(even){background:rgba(255,255,255,.35)}
+.lz-note{font-size:12.5px;color:#4a5a6a;background:rgba(95,176,217,.12);border:1px solid rgba(95,176,217,.35);border-radius:12px;padding:6px 10px;margin-bottom:8px}
+.lz-meta{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;font-size:13px}
+.lz-f{display:flex;flex-direction:column;gap:1px;margin:0 !important;font-size:11.5px}.lz-f input{height:28px;padding:2px 8px !important;max-width:160px}
+.lz{background:rgba(255,255,255,.55)}.lz tbody tr:nth-child(even) td{background:rgba(228,240,235,.55)}
+@media(max-width:600px){header.top{top:4px}}
+@media print{body{background:#fff !important}.card,.modal{backdrop-filter:none;box-shadow:none !important}}
+.modal-bg{z-index:1500 !important}
 </style>
 <script id="fsShamileenScript">
 /* ================= FS windows, شاملین (تحریک جدید / وقف جدید), DK open ================= */
@@ -8743,11 +8788,11 @@ var FSX_ON=false, FSX_MQ=window.matchMedia('(min-width:900px)');
     var on=FSX_ON&&FSX_MQ.matches; bg.classList.toggle('fs',on);
     if(on){ var m=bg.querySelector('.modal'),h3=m.querySelector('h3'); var ttl=h3?h3.textContent:''; 
       m.insertAdjacentHTML('afterbegin','<div class="fs-bar"><button onclick="closeModal()">↩ واپسی</button><b>'+kEsc(h3?h3.textContent:'')+'</b><button class="x" onclick="closeModal()">✕ ختم</button></div>');
-      if(h3) h3.style.display='none'; if(/entryHeadsWrap/.test(h)) m.classList.add('fs-dense'); if(/ترسیل سمری|رسید بک|اسم وار|تفصیلی کھاتہ جات|بقایادار|لوکل خرچ/.test(ttl)) fsTopTb(m); }
+      if(h3) h3.style.display='none'; if(/entryHeadsWrap/.test(h)) m.classList.add('fs-dense'); if(/ترسیل سمری|رسید بک|اسم وار|تفصیلی کھاتہ جات|بقایادار|لوکل خرچ|لازمی چندہ/.test(ttl)) fsTopTb(m); }
     if(/class="cf-sec"/.test(h)){ var mm=bg.querySelector('.modal'); if(mm) mm.classList.add('cf-compact'); } };
   closeModal=function(){ if(window.FSX_KEEP){ window.FSX_KEEP(); return; } FSX_ON=false; _cm(); };
   printReport=function(){ FSX_ON=false; return _pr.apply(this,arguments); };
-  ['openEntryModal','openKhataModal','openDetailedKhataModal','openCashDetailsModal','openMuhassilBookModal','openDefaultersModal','openRemittanceSummaryModal','openIncomeModal','openExpenseModal','openNamewiseModal','openBudgetMembersModal','openTanzeemDetailModal','openShamileen','openShReport','openShamileenForm','openLocalReport'].forEach(function(n){
+  ['openEntryModal','openKhataModal','openDetailedKhataModal','openCashDetailsModal','openMuhassilBookModal','openDefaultersModal','openRemittanceSummaryModal','openIncomeModal','openExpenseModal','openNamewiseModal','openBudgetMembersModal','openTanzeemDetailModal','openShamileen','openShReport','openShamileenForm','openLocalReport','openLazmi'].forEach(function(n){
     var o=window[n]; if(typeof o!=='function') return;
     window[n]=function(){ FSX_ON=true; return o.apply(this,arguments); };
   });
@@ -8756,7 +8801,7 @@ var FSX_ON=false, FSX_MQ=window.matchMedia('(min-width:900px)');
   var _rh=renderHeads; renderHeads=function(){ return back+_rh(); };
   var _rd=renderDashboard; renderDashboard=function(){
     var add='<button class="dash-act a8" onclick="openShamileen(\'tj\')"><span class="ico">🤝</span><span>تحریک جدید / وقف جدید شاملین</span></button>'+
-      '<button class="dash-act a9" onclick="openShReport()"><span class="ico">📑</span><span>شاملین رپورٹ</span></button>'+
+      '<button class="dash-act a9" onclick="openLazmi()"><span class="ico">📋</span><span>بجٹ لازمی چندہ جات</span></button>'+
       '<button class="dash-act a11" onclick="openLocalReport()"><span class="ico">🧾</span><span>لوکل خرچ رپورٹ</span></button>'+
       '<button class="dash-act a10" title="ہیڈز" onclick="switchTab(\'heads\')"><span class="ico">🏷</span><span>ہیڈز</span></button>';
     return _rd().replace('<button class="dash-act a7"', add+'<button class="dash-act a7"'); };
@@ -9281,7 +9326,7 @@ function fsOverview(){
   renderDashboard=function(){ var h=_d(); var i=h.lastIndexOf('</div>'); return h.slice(0,i)+fsOverview()+h.slice(i); };
   renderSummary=function(){ var h=_s(),tj=shSum(shRows('tj'),'budget'),wj=shSum(shRows('wj'),'budget');
     h=h.replace(/(<\/div>\s*<div class="sum-sub">)/,'<div class="sum-tile tj"><div class="n">'+fmtNum(tj)+'</div><div class="l">کل وعدہ تحریک جدید</div></div><div class="sum-tile wj"><div class="n">'+fmtNum(wj)+'</div><div class="l">کل وعدہ وقف جدید</div></div>$1');
-    var re=/(\n\s*<\/div>\s*<div class="card">\s*<div class="sum-top">\s*<h2>مد وار سمری)/; if(re.test(h)) h=h.replace(re,fsOverview()+'$1'); return h; };
+    return h; };
 })();
 
 /* ================= بٹنوں کی رنگ سکیم ================= */
@@ -9291,7 +9336,7 @@ function fsClass(b){
   if(/Csv|Excel|Pdf|download|export|backup|Backup|ایکسپورٹ|Excel/i.test(o+tx)) return 'exp';
   if(/print|share|copy/i.test(o)) return 'prn';
   if(/summary|Summary|Remittance|Closing|Years/.test(o)) return 'sum';
-  if(/Report|Defaulters|Namewise|Muhassil|Tanzeem|BudgetMembers|Cash|heads|Heads/.test(o)) return 'rep';
+  if(/Report|Lazmi|Defaulters|Namewise|Muhassil|Tanzeem|BudgetMembers|Cash|heads|Heads/.test(o)) return 'rep';
   return 'new';
 }
 var fsRaf=0;
@@ -9302,6 +9347,44 @@ fsRecolor();
   renderShamileen=function(){ _rl(); var m=document.querySelector('#modalBg .modal'); if(!m) return; var gs=m.querySelectorAll('.shg'); if(gs.length){ var w=document.createElement('div'); w.className='shg-scroll'; gs[0].parentNode.insertBefore(w,gs[0]); Array.prototype.forEach.call(gs,function(g){w.appendChild(g);}); } };
   renderShReport=function(){ _rr(); var t=document.querySelector('#modalBg .tbl-wrap'); if(t){ t.style.maxHeight='56vh'; t.style.overflow='auto'; } };
 })();
+
+/* ================= بجٹ لازمی چندہ جات — فارم تشخیص آمد ================= */
+function lzHeads(){ var f=function(n){return DB.heads.find(function(h){return (h.ur||'').replace(/\s+/g,' ').trim()===n;});}; return {hissa:f('حصہ آمد'),bashara:f('حصہ آمد بشرح عام'),chanda:f('چندہ عام')}; }
+function lzRows(){
+  var H=lzHeads(),rows=[];
+  DB.khatas.slice().sort(function(a,b){return a.number-b.number;}).forEach(function(k){
+    var bh=k.budgetByHead||{},v=function(h){return h?(+bh[h.id]||0):0;},hi=v(H.hissa),ge=v(H.bashara)+v(H.chanda),rate,w;
+    if(hi>0){rate=10;w=hi;} else if(ge>0){rate=16;w=ge;} else return;
+    var ann=w*rate; rows.push({k:k,wasi:(k.wasiyatNo||hi>0)?'موصی':'غیر موصی',src:k.incomeSource||'',rate:rate,annInc:ann,monInc:Math.round(ann/12),annW:w,monW:Math.round(w/12),jalsa:Math.round(ann/120)});
+  });
+  return rows;
+}
+function lzMeta(){ return (DB.lzMeta=DB.lzMeta||{post:'',tehsil:'',district:''}); }
+function lzPeriod(){ var p=(DB.fiscalYear||'').split('-'),a=p[0]?'20'+p[0]:'',b=p[1]?'20'+p[1]:''; return 'از یکم جولائی '+a+'ء تا 30 جون '+b+'ء'; }
+function lzTable(){
+  var rows=lzRows(),S=[0,0,0,0,0];
+  var th='<style>.lz{width:100%;border-collapse:collapse;font-size:12.5px}.lz th,.lz td{border:1px solid #9fb0c4;padding:4px 5px;text-align:center}.lz th{background:#e6eef8;color:#2f4a6d}.lz td.nm{text-align:start}.lz tr.tot td{background:#f6efd6;font-weight:700}</style>';
+  var h=th+'<table class="lz"><thead><tr><th rowspan="2">نمبر شمار</th><th rowspan="2">نام چندہ دہندہ / ولدیت / زوجیت</th><th rowspan="2">موصی / غیر موصی</th><th rowspan="2">ذرائع آمد</th><th rowspan="2">شرح چندہ</th><th colspan="2">آمدنی</th><th colspan="2">چندہ واجب</th><th rowspan="2">چندہ جلسہ سالانہ</th><th rowspan="2">رقبہ زمین / تفصیل کاروبار</th></tr><tr><th>ماہوار</th><th>سالانہ</th><th>ماہوار</th><th>سالانہ</th></tr></thead><tbody>';
+  rows.forEach(function(r,i){ S[0]+=r.monInc;S[1]+=r.annInc;S[2]+=r.monW;S[3]+=r.annW;S[4]+=r.jalsa;
+    h+='<tr><td>'+(i+1)+'</td><td class="nm">'+kEsc(r.k.name_ur||r.k.name_en)+(r.k.rel_ur?'<br><small>'+kEsc(r.k.rel_ur)+'</small>':'')+'</td><td>'+r.wasi+'</td><td>'+kEsc(r.src)+'</td><td>1/'+r.rate+'</td><td>'+fmtNum(r.monInc)+'</td><td>'+fmtNum(r.annInc)+'</td><td>'+fmtNum(r.monW)+'</td><td>'+fmtNum(r.annW)+'</td><td>'+fmtNum(r.jalsa)+'</td><td></td></tr>'; });
+  if(!rows.length) return '<div class="empty">کسی کھاتے میں حصہ آمد / چندہ عام کا سالانہ بجٹ درج نہیں</div>';
+  return h+'<tr class="tot"><td colspan="5">میزان</td>'+S.map(function(x){return '<td>'+fmtNum(x)+'</td>';}).join('')+'<td></td></tr></tbody></table>';
+}
+function lzHeaderHtml(){ var m=lzMeta(); return '<div style="text-align:center;font-weight:700;margin-bottom:6px">'+lzPeriod()+'</div><div style="margin-bottom:8px;font-size:13px">نام جماعت: <b>'+kEsc(DB.orgName||'')+'</b> &nbsp;&nbsp; ڈاکخانہ: <b>'+kEsc(m.post)+'</b> &nbsp;&nbsp; تحصیل: <b>'+kEsc(m.tehsil)+'</b> &nbsp;&nbsp; ضلع: <b>'+kEsc(m.district)+'</b></div>'; }
+function openLazmi(){ renderLazmi(); }
+function renderLazmi(){
+  var m=lzMeta(),inp=function(k,l){return '<label class="lz-f"><span>'+l+'</span><input type="text" value="'+kEsc(m[k])+'" oninput="lzMeta().'+k+'=this.value;saveDB()"></label>';};
+  showModal('<h3>📋 بجٹ لازمی چندہ جات — فارم تشخیص آمد</h3><div class="lz-note">کھاتہ جات میں درج سالانہ واجب چندہ سے آمدنی خود بنتی ہے: حصہ آمد ← 1/10، چندہ عام / حصہ آمد بشرح عام ← 1/16، جلسہ سالانہ ← سالانہ آمد کا 1/120۔</div>'+
+   '<div class="lz-meta"><b>'+lzPeriod()+'</b><span>جماعت: '+kEsc(DB.orgName||'—')+'</span>'+inp('post','ڈاکخانہ')+inp('tehsil','تحصیل')+inp('district','ضلع')+'</div>'+
+   '<div class="tbl-wrap" style="max-height:62vh;overflow:auto;margin-top:8px">'+lzTable()+'</div>'+
+   '<div class="toolbar"><button class="btn outline sm" onclick="lzPrint()">🖨 پرنٹ</button><button class="btn outline sm" onclick="lzShare()">📤 شیئر</button><button class="btn outline sm" onclick="downloadReportCsv(\'فارم تشخیص آمد\',lzHeaderHtml()+lzTable())">📊 Excel</button></div>');
+}
+function lzPrint(){ executePrint('فارم تشخیص آمد',lzHeaderHtml()+lzTable(),{orientation:'portrait',fontScale:0.78}); }
+function lzShare(){
+  var t='فارم تشخیص آمد — '+lzPeriod()+'\nجماعت: '+(DB.orgName||'')+'\n'+lzRows().map(function(r,i){return (i+1)+'. '+(r.k.name_ur||r.k.name_en)+' | '+r.wasi+' | سالانہ آمدنی '+fmtNum(r.annInc)+' | سالانہ واجب '+fmtNum(r.annW)+' | جلسہ '+fmtNum(r.jalsa);}).join('\n');
+  if(navigator.share){ navigator.share({title:'فارم تشخیص آمد',text:t}).catch(function(){}); }
+  else if(navigator.clipboard){ navigator.clipboard.writeText(t).then(function(){ alert('رپورٹ کاپی ہو گئی ہے، اب کہیں بھی پیسٹ کر کے بھیجیں'); }); }
+}
 
 </script>
 </body>
